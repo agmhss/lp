@@ -9,7 +9,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    @media print { body { display: none; } }
     .term-selection, .subject-input { display: none; }
     select[multiple] { height: 120px; }
   </style>
@@ -26,20 +25,157 @@
     </div>
 
     <form id="lessonPlanForm" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
-      <!-- API Key -->
+      <!-- API Key + Test Button -->
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Your Groq API Key (gsk_...)</label>
           <input type="password" id="groqKey" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500" placeholder="Paste your key here" />
         </div>
         <div>
-          <button type="button" onclick="testKey()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition">
+          <button type="button" id="testKeyBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition">
             Test Key
           </button>
         </div>
       </div>
-      <div id="keyStatus" class="text-sm font-medium"></div>
+      <div id="keyStatus" class="text-sm font-medium hidden"></div>
 
+      <!-- Rest of the form (unchanged) -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Medium (மொழி)</label>
+        <select id="medium" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <option value="English">English Medium</option>
+          <option value="Tamil">Tamil Medium</option>
+        </select>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Class (வகுப்பு)</label>
+          <select id="class" required class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+            <option value="">-- Select Class --</option>
+            <optgroup label="Primary (1–7)">…(same options)…</optgroup>
+            <optgroup label="Secondary (8–10)">…</optgroup>
+            <optgroup label="Higher Secondary">
+              <option value="11">Class 11</option>
+              <option value="12">Class 12</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div id="termDiv" class="term-selection">
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Term</label>
+          <div class="grid grid-cols-3 gap-3">
+            <label class="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+              <input type="radio" name="term" value="I" class="sr-only peer" required/>
+              <span class="peer-checked:text-indigo-600 font-medium">Term I</span>
+            </label>
+            <label class="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+              <input type="radio" name="term" value="II" class="sr-only peer" required/>
+              <span class="peer-checked:text-indigo-600 font-medium">Term II</span>
+            </label>
+            <label class="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+              <input type="radio" name="term" value="III" class="sr-only peer" required/>
+              <span class="peer-checked:text-indigo-600 font-medium">Term III</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject (auto or manual) -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Subject (பாடம்)</label>
+        <select id="subjectSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <option value="">-- Select Subject --</option>
+          <option value="Tamil">Tamil</option>
+          <option value="English">English</option>
+          <option value="Maths">Mathematics</option>
+          <option value="Science">Science</option>
+          <option value="Social">Social Science</option>
+        </select>
+        <input type="text" id="subjectInput" class="subject-input mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Type subject (e.g. Physics, Chemistry)" />
+      </div>
+
+      <!-- Other fields (unchanged) -->
+      <!-- ... Unit, Title, Dates, Nature, Methodology, Activity Focus, Sub-Activity ... -->
+
+      <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xl py-5 rounded-xl shadow-lg transition transform hover:scale-105">
+        Generate Lesson Plan with AI
+      </button>
+      <div id="errorMsg" class="hidden bg-red-100 text-red-700 p-4 rounded-lg"></div>
+    </form>
+
+    <div id="lessonPlanOutput" class="hidden mt-12 bg-white rounded-2xl shadow-xl p-8">
+      <h2 class="text-3xl font-bold text-indigo-800 text-center mb-8">Generated Lesson Plan</h2>
+      <div id="lessonPlanContent" class="text-base leading-relaxed"></div>
+      <div class="mt-10 text-center">
+        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition">
+          Download as PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let GROQ_API_KEY = '';
+
+    // ==================== FIXED: Functions defined BEFORE they are used ====================
+    function showStatus(msg, type = 'success') {
+      const el = document.getElementById('keyStatus');
+      el.textContent = msg;
+      el.className = type === 'error' ? 'text-red-600' : 'text-green-600';
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 6000);
+    }
+
+    async function testKey() {
+      const keyInput = document.getElementById('groqKey');
+      const btn = document.getElementById('testKeyBtn');
+      const status = document.getElementById('keyStatus');
+
+      const key = keyInput.value.trim();
+      if (!key) {
+        showStatus('Please paste your Groq API key first!', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Testing…';
+      showStatus('Testing key…', 'success');
+
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Available models:', data.data.map(m => m.id));
+          showStatus('Key OK! Ready to generate lesson plans', 'success');
+        } else {
+          const err = await res.json();
+          showStatus(`Invalid key: ${err.error?.message || res.statusText}`, 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showStatus('Network error – check internet / try mobile data', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test Key';
+      }
+    }
+
+    // Attach click handler properly (works on mobile too)
+    document.getElementById('testKeyBtn').addEventListener('click', testKey);
+
+    // ==================== Rest of your original script (unchanged) ====================
+    // (All activity options, getCurrentSubject, class change logic, getAIContent, generateHTML, downloadPDF, etc.)
+    // ... Paste the entire script from the previous working version here ...
+
+    // Example placeholder (replace with your full script):
+    // include all functions: getCurrentSubject(), updateActivityOptions(), class change listener, getAIContent(), form submit, downloadPDF(), etc.
+
+  </scriptt>
+    <body>
       <!-- Medium -->
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Medium (மொழி)</label>
