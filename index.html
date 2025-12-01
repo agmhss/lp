@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Fast Lesson Plan Generator – OCR Selected Pages</title>
+<title>TNSB Lesson Plan Generator – OCR Selected Pages (Full LP Format)</title>
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -18,9 +18,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<style>
-  .hidden { display:none !important; }
-</style>
+<style>.hidden { display:none !important; }</style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -28,194 +26,274 @@
 <div class="max-w-4xl mx-auto">
 
 <h1 class="text-4xl font-bold text-center text-indigo-800 mb-2">
-  TNSB Lesson Plan Generator
+  Tamil Nadu State Board – Lesson Plan Generator
 </h1>
-<h2 class="text-2xl text-center text-indigo-700 mb-8">
-  Fast OCR – Read Only Pages You Need
+<h2 class="text-2xl text-center text-indigo-700 mb-6">
+  Fast OCR • Selected Pages Only • Full LP Format
 </h2>
 
+<!-- STATUS -->
+<div id="statusBox" class="hidden bg-indigo-100 border border-indigo-400 text-indigo-800 p-4 rounded-lg text-center mb-6"></div>
 
-<!-- Status Box -->
-<div id="statusBox" class="hidden bg-indigo-100 border border-indigo-400 text-indigo-800 p-4 rounded-lg text-center mb-6">
-  Processing...
-</div>
-
-
-<!-- Form -->
+<!-- FORM -->
 <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-8">
 
-  <!-- Upload PDF -->
+  <!-- Subject / Class / Section -->
+  <div class="grid md:grid-cols-3 gap-6">
+    <div>
+      <label class="block font-bold mb-2">Subject</label>
+      <input id="subject" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="English / Tamil / Maths" />
+    </div>
+    <div>
+      <label class="block font-bold mb-2">Class</label>
+      <input id="class" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="10 / 8 / 6" />
+    </div>
+    <div>
+      <label class="block font-bold mb-2">Section</label>
+      <input id="section" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="A / B / C" />
+    </div>
+  </div>
+
+  <!-- Unit / Lesson Title / Author -->
+  <div class="grid md:grid-cols-3 gap-6">
+    <div>
+      <label class="block font-bold mb-2">Unit</label>
+      <input id="unit" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="Unit 3" />
+    </div>
+    <div>
+      <label class="block font-bold mb-2">Lesson Title</label>
+      <input id="title" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="Heat / Plant Life" />
+    </div>
+    <div>
+      <label class="block font-bold mb-2">Author (Optional)</label>
+      <input id="author" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="Textbook Author" />
+    </div>
+  </div>
+
+  <!-- Dates -->
+  <div>
+    <label class="block font-bold mb-2">Week / Dates</label>
+    <input id="dates" value="02/12/2025 - 06/12/2025" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" />
+  </div>
+
+  <!-- PDF Upload -->
   <div>
     <label class="block font-bold mb-2">Upload Textbook PDF</label>
-    <input type="file" id="pdfFile" accept="application/pdf"
-           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white" />
+    <input type="file" id="pdfFile" accept="application/pdf" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white" />
   </div>
 
   <!-- Page Range -->
   <div class="grid grid-cols-2 gap-6">
     <div>
       <label class="block font-bold mb-2">From Page</label>
-      <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="e.g., 12">
+      <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="12">
     </div>
-
     <div>
       <label class="block font-bold mb-2">To Page</label>
-      <input type="number" id="toPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="e.g., 18">
+      <input type="number" id="toPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="18">
     </div>
   </div>
 
-  <button id="runOCR" 
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
-    OCR Selected Pages
+  <button id="runOCR"
+    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+    OCR Selected Pages & Generate Lesson Plan
   </button>
 
 </div>
 
 
-
 <!-- RESULT -->
 <div id="result" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-10 border-4 border-indigo-200">
 
-  <h2 class="text-3xl font-bold text-center text-indigo-800 mb-8">Lesson Plan</h2>
+  <h2 class="text-3xl font-bold text-center text-indigo-800 mb-6">Lesson Plan</h2>
 
   <div id="content" class="text-lg leading-relaxed"></div>
 
   <div class="text-center mt-12">
     <button onclick="downloadPDF()"
       class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
-      Download as PDF
+      Download Lesson Plan PDF
     </button>
   </div>
-</div>
-
 </div>
 
 
 
 <script>
-/* -------------------------------------------------------------
-   Show / Hide Status
-------------------------------------------------------------- */
-function setStatus(msg) {
-  const box = document.getElementById("statusBox");
-  if (!msg) {
-    box.classList.add("hidden");
-    box.textContent = "";
-  } else {
-    box.classList.remove("hidden");
-    box.textContent = msg;
-  }
+function setStatus(msg){ 
+  const el=document.getElementById("statusBox");
+  if(!msg){ el.classList.add("hidden"); el.textContent=""; }
+  else{ el.classList.remove("hidden"); el.textContent=msg; }
 }
-
 
 /* -------------------------------------------------------------
    FAST OCR: Only Selected Pages
 ------------------------------------------------------------- */
-async function ocrSelectedPages(file, start, end) {
+async function ocrSelectedPages(file, start, end){
   const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-  let finalText = "";
+  let text = "";
 
-  for (let p = start; p <= end; p++) {
-    setStatus(`Reading page ${p} of ${end}...`);
+  for(let p=start; p<=end; p++){
+    setStatus(`Reading Page ${p} of ${end}...`);
 
     const page = await pdf.getPage(p);
-    const viewport = page.getViewport({ scale: 1.6 });
+    const viewport = page.getViewport({ scale:1.6 });
 
-    // Render page into a canvas
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    const canvas=document.createElement("canvas");
+    canvas.width=viewport.width;
+    canvas.height=viewport.height;
+
     await page.render({
-      canvasContext: canvas.getContext("2d"),
+      canvasContext:canvas.getContext("2d"),
       viewport
     }).promise;
 
-    // OCR the page (Tamil + English)
-    const result = await Tesseract.recognize(canvas, 'tam+eng');
-    finalText += "\n" + result.data.text;
+    const result = await Tesseract.recognize(canvas, "tam+eng");
+    text += result.data.text + "\n";
   }
 
   setStatus("");
-  return finalText;
+  return text;
 }
 
-
 /* -------------------------------------------------------------
-   Convert OCR text → Lesson Plan (Simple but clean)
+   AUTO-GENERATED LP using OCR Text
 ------------------------------------------------------------- */
-function makeLessonPlan(text) {
-  const cleaned = text.replace(/\s+/g, " ").trim();
+function buildLessonPlan(rawText){
+
+  const gist = rawText.split(/\s+/).slice(0,120).join(" "); // short summary
+
+  const subject = document.getElementById("subject").value;
+  const cls     = document.getElementById("class").value;
+  const section = document.getElementById("section").value;
+  const unit    = document.getElementById("unit").value;
+  const title   = document.getElementById("title").value;
+  const author  = document.getElementById("author").value;
+  const dates   = document.getElementById("dates").value;
 
   return `
-    <h3 class="text-2xl font-bold text-indigo-700 mb-4">Extracted Text (OCR)</h3>
-    <p class="bg-blue-50 p-4 rounded-lg border mb-6">${cleaned}</p>
+  <div class="space-y-6">
 
-    <h3 class="text-xl font-bold text-indigo-700">Learning Outcomes</h3>
-    <p class="bg-gray-50 p-4 rounded-lg border mb-6">
-      • Understand main concepts from the textbook pages.<br>
-      • Recall definitions, facts and explanations.<br>
-      • Improve reading comprehension using authentic lesson text.<br>
-      • Apply the ideas in class discussions and activities.
-    </p>
+    <!-- 1. Essentials -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">1. Subject, Class, Section, Dates</h3>
+      <p><b>Subject:</b> ${subject} <br>
+         <b>Class:</b> ${cls} &nbsp;&nbsp; <b>Section:</b> ${section}<br>
+         <b>Dates:</b> ${dates}</p>
+    </div>
 
-    <h3 class="text-xl font-bold text-indigo-700">Activity</h3>
-    <p class="bg-green-50 p-4 rounded-lg border mb-6">
-      Read the OCR text. Ask oral questions. Students explain meaning in their own words.
-    </p>
+    <!-- 2. Unit / Title -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">2. Unit, Title, Author</h3>
+      <p><b>Unit:</b> ${unit}<br>
+         <b>Title:</b> ${title}<br>
+         <b>Author:</b> ${author || "Textbook Author"}</p>
+    </div>
 
-    <h3 class="text-xl font-bold text-indigo-700">Homework</h3>
-    <p class="bg-yellow-50 p-4 rounded-lg border mb-6">
-      Write notes from the extracted text & answer all in-text questions from the textbook.
-    </p>
+    <!-- 3. Nature of the Lesson -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">3. Nature of the Lesson</h3>
+      <p>(i) Building blocks / Stand-alone / Tree & branches<br>
+         (ii) Format: 40 minutes</p>
+    </div>
 
-    <h3 class="text-xl font-bold text-indigo-700">Remedial</h3>
-    <p class="bg-purple-50 p-4 rounded-lg border mb-6">
-      Provide simplified explanations of the important sentences extracted through OCR.
-    </p>
+    <!-- 4. Learning Outcomes -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">4. Learning Outcomes</h3>
+      <p>
+        • Understand key concepts from the lesson.<br>
+        • Recall important terms, definitions and examples.<br>
+        • Improve reading and comprehension using textbook content.<br>
+        • Apply knowledge in activities and discussions.
+      </p>
+    </div>
+
+    <!-- 5. Methodology -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">5. Methodology</h3>
+      <p>Interactive / Explanatory / Demonstrative / Do & Learn</p>
+    </div>
+
+    <!-- 6. Teaching Aids -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">6. Teaching Aids</h3>
+      <p>Textbook, Blackboard, Chart, PPT/Video (optional)</p>
+    </div>
+
+    <!-- 7. Gist -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">7. Content / Gist of the Lesson</h3>
+      <p>${gist}</p>
+    </div>
+
+    <!-- 8. Activities -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">8. Activities Planned</h3>
+
+      <p><b>Motivation:</b> Simple oral questions related to the topic.</p>
+
+      <p><u>Choose one pattern:</u></p>
+
+      <p><b>For Lesson:</b><br>
+        (i) Consolidation<br>
+        (ii) Reinforcement<br>
+        (iii) Enrichment
+      </p>
+    </div>
+
+    <!-- 9. Week-end Activity -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">9. Week-end Activity</h3>
+      <p>Students prepare short notes or draw a diagram based on the chapter.</p>
+    </div>
+
+    <!-- 10. Remedial -->
+    <div>
+      <h3 class="text-xl font-bold text-indigo-700">10. Remedial Action</h3>
+      <p>Re-teach important points using simple examples. Provide peer support.</p>
+    </div>
+  </div>
   `;
 }
 
-
 /* -------------------------------------------------------------
-   Handle OCR Button Click
+   MAIN CLICK: RUN OCR + GENERATE LP
 ------------------------------------------------------------- */
-document.getElementById("runOCR").addEventListener("click", async () => {
-  const file = document.getElementById("pdfFile").files[0];
-  const fromPage = parseInt(document.getElementById("fromPage").value);
-  const toPage = parseInt(document.getElementById("toPage").value);
+document.getElementById("runOCR").addEventListener("click", async ()=>{
 
-  if (!file) return alert("Please upload textbook PDF");
-  if (!fromPage || !toPage) return alert("Enter valid page range");
-  if (fromPage > toPage) return alert("From Page must be ≤ To Page");
+  const file=document.getElementById("pdfFile").files[0];
+  const fp = parseInt(document.getElementById("fromPage").value);
+  const tp = parseInt(document.getElementById("toPage").value);
 
-  setStatus("Starting OCR... Please wait");
+  if(!file) return alert("Upload textbook PDF first.");
+  if(!fp || !tp) return alert("Enter valid page range.");
+  if(fp>tp) return alert("From Page must be <= To Page.");
 
-  const text = await ocrSelectedPages(file, fromPage, toPage);
+  setStatus("Starting OCR...");
 
-  document.getElementById("content").innerHTML = makeLessonPlan(text);
+  const rawText = await ocrSelectedPages(file, fp, tp);
+
+  // Build lesson plan (OCR text hidden)
+  document.getElementById("content").innerHTML = buildLessonPlan(rawText);
   document.getElementById("result").classList.remove("hidden");
-  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+  document.getElementById("result").scrollIntoView({behavior:"smooth"});
 
   setStatus("");
 });
 
-
 /* -------------------------------------------------------------
-   Download PDF
+   DOWNLOAD PDF
 ------------------------------------------------------------- */
-function downloadPDF() {
-  const { jsPDF } = window.jspdf;
-
-  html2canvas(document.getElementById("content"), { scale: 2 }).then(canvas => {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const width = pdf.internal.pageSize.getWidth();
-    const height = (canvas.height * width) / canvas.width;
-
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
-    pdf.save("LessonPlan_SelectedPages.pdf");
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  html2canvas(document.getElementById("content"),{scale:2}).then(canvas=>{
+    const pdf=new jsPDF('p','mm','a4');
+    const width=pdf.internal.pageSize.getWidth();
+    const height=(canvas.height*width)/canvas.width;
+    pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,width,height);
+    pdf.save("LessonPlan.pdf");
   });
 }
-
 </script>
 
 </body>
