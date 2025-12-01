@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,7 +19,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<style>.hidden { display:none !important; }</style>
+<style>
+.hidden { display:none !important; }
+</style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -31,65 +34,74 @@
   Processing...
 </div>
 
-<!-- FORM SECTION -->
+<!-- MAIN FORM WRAPPER -->
 <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-8">
 
-  <div class="grid md:grid-cols-3 gap-6">
+    <!-- 1. UPLOAD FIRST -->
     <div>
-      <label class="block font-bold mb-2">Subject</label>
-      <input id="subject" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="English" />
+        <label class="block font-bold mb-2 text-lg">Upload Textbook PDF</label>
+        <input type="file" id="pdfFile" accept="application/pdf"
+            class="w-full px-4 py-3 border-2 rounded-lg bg-white" />
     </div>
-    <div>
-      <label class="block font-bold mb-2">Class</label>
-      <input id="class" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="10" />
-    </div>
-    <div>
-      <label class="block font-bold mb-2">Section</label>
-      <input id="section" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="A" />
-    </div>
-  </div>
 
-  <div class="grid md:grid-cols-3 gap-6">
-    <div>
-      <label class="block font-bold mb-2">Unit</label>
-      <input id="unit" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Unit 3" />
+    <!-- PAGE NUMBERS -->
+    <div id="pageInputs" class="hidden grid grid-cols-2 gap-6">
+        <div>
+            <label class="block font-bold mb-2">From Page</label>
+            <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 rounded-lg" />
+        </div>
+        <div>
+            <label class="block font-bold mb-2">To Page</label>
+            <input type="number" id="toPage" class="w-full px-4 py-3 border-2 rounded-lg" />
+        </div>
     </div>
-    <div>
-      <label class="block font-bold mb-2">Lesson Title</label>
-      <input id="title" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Heat" />
-    </div>
-    <div>
-      <label class="block font-bold mb-2">Author (Optional)</label>
-      <input id="author" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Author Name" />
-    </div>
-  </div>
 
-  <div>
-    <label class="block font-bold mb-2">Week / Dates</label>
-    <input id="dates" value="02/12/2025 - 06/12/2025" class="w-full px-4 py-3 border-2 rounded-lg" />
-  </div>
+    <button id="runOCR" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+        OCR Selected Pages & Auto-Fill Form
+    </button>
 
-  <div>
-    <label class="block font-bold mb-2">Upload Textbook PDF</label>
-    <input type="file" id="pdfFile" accept="application/pdf"
-           class="w-full px-4 py-3 border-2 rounded-lg bg-white" />
-  </div>
+    <!-- AUTO-FILL FORM -->
+    <div id="formSection" class="hidden space-y-8">
 
-  <div class="grid grid-cols-2 gap-6">
-    <div>
-      <label class="block font-bold mb-2">From Page</label>
-      <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 rounded-lg" />
+        <div class="grid md:grid-cols-3 gap-6">
+            <div>
+                <label class="block font-bold mb-2">Subject</label>
+                <input id="subjectInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="English" />
+            </div>
+            <div>
+                <label class="block font-bold mb-2">Class</label>
+                <input id="cls" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="10" />
+            </div>
+            <div>
+                <label class="block font-bold mb-2">Section</label>
+                <input id="sectionInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="A" />
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <div>
+                <label class="block font-bold mb-2">Unit</label>
+                <input id="unitInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Unit 3" />
+            </div>
+            <div>
+                <label class="block font-bold mb-2">Lesson Title</label>
+                <input id="lessonTitle" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Heat" />
+            </div>
+            <div>
+                <label class="block font-bold mb-2">Author (Optional)</label>
+                <input id="lessonAuthor" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Author Name" />
+            </div>
+        </div>
+
+        <div>
+            <label class="block font-bold mb-2">Week / Dates</label>
+            <input id="dates" value="02/12/2025 - 06/12/2025" class="w-full px-4 py-3 border-2 rounded-lg" />
+        </div>
+
+        <button id="generatePlan" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+            Generate Lesson Plan
+        </button>
     </div>
-    <div>
-      <label class="block font-bold mb-2">To Page</label>
-      <input type="number" id="toPage" class="w-full px-4 py-3 border-2 rounded-lg" />
-    </div>
-  </div>
-
-  <button id="runOCR"
-    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
-    OCR Selected Pages & Generate Lesson Plan
-  </button>
 
 </div>
 
@@ -99,8 +111,9 @@
   <div id="content" class="text-lg leading-relaxed"></div>
 
   <div class="text-center mt-12">
-    <button onclick="downloadPDF()"
-      class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">Download PDF</button>
+    <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
+        Download PDF
+    </button>
   </div>
 </div>
 
@@ -108,200 +121,218 @@
 
 <script>
 
-/* STATUS DISPLAY */
+/* STATUS MESSAGE */
 function setStatus(msg){
-  const box=document.getElementById("statusBox");
-  if(!msg){ box.classList.add("hidden"); }
-  else { box.classList.remove("hidden"); box.textContent=msg; }
+    const box = document.getElementById("statusBox");
+    if (!msg) box.classList.add("hidden");
+    else { box.classList.remove("hidden"); box.textContent = msg; }
 }
 
-/* OCR SELECTED PAGES */
-async function ocrSelectedPages(file,start,end){
-  const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-  let text="";
+/* PDF UPLOAD LISTENER */
+document.getElementById("pdfFile").addEventListener("change", () => {
+    pageInputs.classList.remove("hidden");
+    runOCR.classList.remove("hidden");
+});
 
-  for(let p=start; p<=end; p++){
-    setStatus(`Reading Page ${p} of ${end}...`);
-    const page=await pdf.getPage(p);
-    const vp=page.getViewport({scale:1.6});
-    const canvas=document.createElement("canvas");
-    canvas.width=vp.width; canvas.height=vp.height;
-    await page.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
+/* OCR FUNCTION */
+async function ocrSelectedPages(file, start, end) {
+    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+    let text = "";
 
-    const result=await Tesseract.recognize(canvas,"tam+eng");
-    text+=result.data.text+"\n";
-  }
+    for (let p = start; p <= end; p++) {
+        setStatus(`Reading Page ${p} of ${end}...`);
 
-  setStatus("");
-  return text;
+        const page = await pdf.getPage(p);
+        const vp = page.getViewport({ scale: 1.6 });
+        const canvas = document.createElement("canvas");
+        canvas.width = vp.width;
+        canvas.height = vp.height;
+
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+
+        const result = await Tesseract.recognize(canvas, "tam+eng");
+        text += result.data.text + "\n";
+    }
+
+    setStatus("");
+    return text;
 }
 
-/* LESSON PLAN BUILDER */
+/* AUTO-FILL DETECTION FROM OCR */
+function autoFillFields(text) {
+    text = text.replace(/\s+/g, " ");
+
+    // Title detection (first line with capital letters)
+    let titleMatch = text.match(/([A-Z][A-Za-z ]{3,})/);
+    if (titleMatch) lessonTitle.value = titleMatch[1];
+
+    // Author detection
+    let authorMatch = text.match(/By ([A-Za-z .]+)/i);
+    if (authorMatch) lessonAuthor.value = authorMatch[1];
+
+    // Class detection
+    let classMatch = text.match(/Class ?(\d+)/i);
+    if (classMatch) cls.value = classMatch[1];
+
+    // Unit detection
+    let unitMatch = text.match(/Unit ?(\d+)/i);
+    if (unitMatch) unitInput.value = "Unit " + unitMatch[1];
+}
+
+/* GENERATE PLAN BUTTON */
+runOCR.addEventListener("click", async () => {
+
+    const file = pdfFile.files[0];
+    const fp = parseInt(fromPage.value);
+    const tp = parseInt(toPage.value);
+
+    if (!file || !fp || !tp) {
+        alert("Please upload PDF & enter page numbers");
+        return;
+    }
+
+    const rawText = await ocrSelectedPages(file, fp, tp);
+
+    autoFillFields(rawText);
+
+    formSection.classList.remove("hidden");
+    formSection.scrollIntoView({ behavior: "smooth" });
+
+});
+
+/* BUILD FULL 10-POINT LESSON PLAN */
 function buildLessonPlan(rawText) {
 
-  // Gist = first ~120 words from OCR text
-  const gist = rawText.replace(/\s+/g, " ").trim().split(" ").slice(0, 120).join(" ");
+    // Extract gist from OCR text (first 120 words)
+    const gist = rawText.replace(/\s+/g, " ").split(" ").slice(0, 120).join(" ");
 
-  return `
-  <div class="space-y-8">
+    return `
+      <div class="space-y-10">
 
-    <!-- 1. ESSENTIALS -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">1. Subject, Class, Section, Dates</h3>
-      <p>
-        <b>Subject:</b> ${subject.value}<br>
-        <b>Class:</b> ${class.value} &nbsp;&nbsp; <b>Section:</b> ${section.value}<br>
-        <b>Dates:</b> ${dates.value}
-      </p>
-    </div>
+        <!-- 1. SUBJECT / CLASS / SECTION / DATES -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">1. Subject, Class, Section, Dates</h3>
+          <p>
+            <b>Subject:</b> ${subjectInput.value}<br>
+            <b>Class:</b> ${cls.value}<br>
+            <b>Section:</b> ${sectionInput.value}<br>
+            <b>Dates:</b> ${dates.value}
+          </p>
+        </div>
 
-    <!-- 2. UNIT, TITLE -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">2. Unit, Title, Author</h3>
-      <p>
-        <b>Unit:</b> ${unit.value}<br>
-        <b>Title:</b> ${title.value}<br>
-        <b>Author:</b> ${author.value || "Textbook Author"}
-      </p>
-    </div>
+        <!-- 2. UNIT / TITLE / AUTHOR -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">2. Unit, Title, Author</h3>
+          <p>
+            <b>Unit:</b> ${unitInput.value}<br>
+            <b>Title:</b> ${lessonTitle.value}<br>
+            <b>Author:</b> ${lessonAuthor.value || "Textbook Author"}
+          </p>
+        </div>
 
-    <!-- 3. NATURE OF LESSON -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">3. Nature of the Lesson</h3>
-      <p>
-        (i) Stand Alone / Building Blocks / Tree & Branches<br>
-        (ii) Format: 40 Minutes
-      </p>
-    </div>
+        <!-- 3. NATURE & FORMAT -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">3. Nature of the Lesson & Format</h3>
+          <p>
+            <b>Nature:</b> Stand-alone / Building-Blocks / Tree-and-Branches (Teacher may choose)<br>
+            <b>Format & Duration:</b> Interactive Session (40–45 mins)
+          </p>
+        </div>
 
-    <!-- 4. LEARNING OUTCOMES -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">4. Learning Outcomes</h3>
-      <p>
-        • Understand the ideas explained in the lesson.<br>
-        • Recall facts, definitions and examples accurately.<br>
-        • Improve reading comprehension using textbook content.<br>
-        • Apply knowledge in activities and discussions.<br>
-        • Develop higher-order thinking skills.
-      </p>
-    </div>
+        <!-- 4. LEARNING OUTCOMES -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">4. Learning Outcomes</h3>
+          <ul class="list-disc ml-6">
+            <li>Students will understand the main ideas of the lesson.</li>
+            <li>Students will be able to use new vocabulary in context.</li>
+            <li>Students will develop listening, speaking, reading and writing skills.</li>
+            <li>Students will respond orally and in writing based on the text.</li>
+            <li>Students will participate in class-based activities confidently.</li>
+          </ul>
+        </div>
 
-    <!-- 5. METHODOLOGY -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">5. Methodology</h3>
-      <p>Interactive / Explanatory / Demonstrative / Do & Learn / Playway</p>
-    </div>
+        <!-- 5. METHODOLOGY -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">5. Methodology</h3>
+          <p>Interactive / Explanatory / Demonstrative / Do-and-Learn / Play-Way Method.</p>
+        </div>
 
-    <!-- 6. TEACHING AIDS -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">6. Teaching Aids</h3>
-      <p>Textbook, Blackboard, Charts, Flash cards, Digital aids (optional)</p>
-    </div>
+        <!-- 6. TEACHING AIDS -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">6. Teaching Aids</h3>
+          <ul class="list-disc ml-6">
+            <li>Textbook</li>
+            <li>Blackboard / Smartboard</li>
+            <li>Charts or Flashcards</li>
+            <li>Activity sheets / Worksheets</li>
+            <li>Audio-visual aids (If applicable)</li>
+          </ul>
+        </div>
 
-    <!-- 7. GIST -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">7. Content / Gist of the Lesson</h3>
-      <p>${gist}</p>
-    </div>
+        <!-- 7. GIST OF THE LESSON -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">7. Content / Gist of the Lesson</h3>
+          <p>${gist || "Lesson summary extracted from OCR pages."}</p>
+        </div>
 
-    <!-- 8. ACTIVITIES -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">8. Activities Planned</h3>
+        <!-- 8. ACTIVITIES -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">8. Activities Planned</h3>
+          <p><b>Motivation:</b> Teacher initiates the topic using simple questioning or visuals.</p>
 
-      <p><b>Motivation:</b> Short oral questions based on prior knowledge.</p>
+          <p class="mt-2"><b>Choose activity type based on lesson:</b></p>
 
-      <h4 class="font-semibold text-indigo-700 mt-3">Choose any ONE of the following patterns:</h4>
+          <ul class="list-disc ml-6 mt-2">
+            <li><b>Listening / Speaking:</b> Brainstorming, Pair Work, Group Presentation.</li>
+            <li><b>Reading:</b> Pre-Reading, While-Reading, Post-Reading tasks.</li>
+            <li><b>Lesson:</b> Consolidation, Reinforcement, Enrichment activities.</li>
+            <li><b>Writing:</b> Hints, Scaffolding, Group Work, Presentation.</li>
+            <li><b>Grammar:</b> Explanation, Examples, Student-generated examples.</li>
+          </ul>
+        </div>
 
-      <!-- Listening/Speaking -->
-      <p class="mt-2">
-        <b>Option A: For Listening / Speaking</b><br>
-        (i) Brain storming<br>
-        (ii) Pair work<br>
-        (iii) Presentation
-      </p>
+        <!-- 9. WEEK-END ACTIVITY -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">9. Week-End Activity</h3>
+          <p>Students complete an assignment, worksheet, or small project related to the lesson.</p>
+        </div>
 
-      <!-- Reading -->
-      <p class="mt-2">
-        <b>Option B: For Reading (Prose / Poem / Supplement)</b><br>
-        (i) Pre-reading activities<br>
-        (ii) While-reading activities<br>
-        (iii) Post-reading activities
-      </p>
+        <!-- 10. REMEDIAL ACTION -->
+        <div>
+          <h3 class="text-xl font-bold text-indigo-700">10. Remedial Action</h3>
+          <ul class="list-disc ml-6">
+            <li>Provide simplified notes for slow learners.</li>
+            <li>Extra vocabulary practice.</li>
+            <li>One-to-one reading/speaking support.</li>
+            <li>Re-teaching difficult concepts.</li>
+          </ul>
+        </div>
 
-      <!-- Lesson -->
-      <p class="mt-2">
-        <b>Option C: For Lesson (Content Teaching)</b><br>
-        (i) Consolidation<br>
-        (ii) Reinforcement<br>
-        (iii) Enrichment
-      </p>
-
-      <!-- Writing -->
-      <p class="mt-2">
-        <b>Option D: For Writing</b><br>
-        (i) Hints / points / scaffolding<br>
-        (ii) Group work<br>
-        (iii) Presentation
-      </p>
-
-      <!-- Grammar -->
-      <p class="mt-2">
-        <b>Option E: For Grammar</b><br>
-        (i) Explain the rules<br>
-        (ii) Give examples<br>
-        (iii) Invite more examples from students
-      </p>
-    </div>
-
-    <!-- 9. WEEKEND ACTIVITY -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">9. Week-end Activity</h3>
-      <p>
-        Students prepare a short note, diagram, mind-map or summary based on the topic.
-      </p>
-    </div>
-
-    <!-- 10. REMEDIAL -->
-    <div>
-      <h3 class="text-xl font-bold text-indigo-700">10. Remedial Action</h3>
-      <p>
-        Re-teach difficult points with simpler examples.<br>
-        Provide peer support & additional practice.
-      </p>
-    </div>
-
-  </div>
-  `;
+      </div>
+    `;
 }
 
-/* MAIN CLICK */
-document.getElementById("runOCR").addEventListener("click", async ()=>{
-  const file=pdfFile.files[0];
-  const fp=parseInt(fromPage.value);
-  const tp=parseInt(toPage.value);
-
-  if(!file || !fp || !tp){ alert("Fill all fields"); return; }
-
-  const raw = await ocrSelectedPages(file,fp,tp);
-
-  content.innerHTML = buildLessonPlan(raw);
-  result.classList.remove("hidden");
-  result.scrollIntoView({behavior:"smooth"});
+/* GENERATE LESSON PLAN */
+document.getElementById("generatePlan").addEventListener("click", () => {
+    content.innerHTML = buildLessonPlan(" ");
+    result.classList.remove("hidden");
+    result.scrollIntoView({ behavior: "smooth" });
 });
 
 /* PDF DOWNLOAD */
-function downloadPDF(){
-  const {jsPDF}=window.jspdf;
-  html2canvas(content,{scale:2}).then(canvas=>{
-    const pdf=new jsPDF('p','mm','a4');
-    const w=pdf.internal.pageSize.getWidth();
-    const h=(canvas.height*w)/canvas.width;
-    pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,w,h);
-    pdf.save("LessonPlan.pdf");
-  });
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    html2canvas(content, { scale: 2 }).then(canvas => {
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const w = pdf.internal.pageSize.getWidth();
+        const h = (canvas.height * w) / canvas.width;
+        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, w, h);
+        pdf.save("LessonPlan.pdf");
+    });
 }
 
 </script>
 
 </body>
+  
 </html>
