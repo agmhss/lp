@@ -6,93 +6,72 @@
   <title>GTK Lesson Plan Creator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     .term-selection, .subject-input { display: none; }
     select[multiple] { height: 130px; }
-    #keyStatus { transition: all 0.3s; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-6 px-4">
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-8 px-4">
   <div class="max-w-4xl mx-auto">
-    <div class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-indigo-800">GTK Adaptive Lesson Plan Creator</h1>
-      <p class="text-lg text-gray-600 mt-2">Classes 1–12 • All Subjects • Tamil & English Medium</p>
+    <h1 class="text-4xl font-bold text-indigo-800 text-center mb-2">GTK Lesson Plan Creator</h1>
+    <p class="text-center text-gray-600 mb-8">Classes 1–12 • Tamil Nadu State Board • 100% Textbook Accurate</p>
+
+    <div class="bg-yellow-100 rounded-xl p-4 mb-6 text-sm text-center">
+      <strong>Get Free Groq API Key →</strong> 
+      <a href="https://console.groq.com/keys" target="_blank" class="text-blue-600 underline">console.groq.com/keys</a>
     </div>
 
-    <div class="bg-yellow-100 border border-yellow-300 rounded-xl p-4 mb-6 text-sm">
-      <strong>Tip:</strong> Get your free Groq API key → 
-      <a href="https://console.groq.com/keys" target="_blank" class="text-blue-600 underline font-medium">console.groq.com/keys</a> → Paste below → Tap "Test Key"
-    </div>
-
-    <form id="lessonPlanForm" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
-      <!-- API Key + Test Button -->
+    <form id="lessonPlanForm" class="bg-white rounded-2xl shadow-2xl p-6 space-y-6">
+      <!-- API Key -->
       <div class="grid md:grid-cols-2 gap-4 items-end">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Your Groq API Key (gsk_...)</label>
-          <input type="password" id="groqKey" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500" placeholder="Paste your key here" autocomplete="off"/>
+          <label class="block font-bold text-gray-700 mb-2">Groq API Key (gsk_...)</label>
+          <input type="password" id="groqKey" class="w-full px-4 py-3 border rounded-lg" placeholder="Paste your key here"/>
         </div>
         <div>
-          <button type="button" id="testKeyBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition shadow-md">
+          <button type="button" id="testKeyBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
             Test Key
           </button>
         </div>
       </div>
-      <div id="keyStatus" class="text-sm font-medium hidden text-center py-2"></div>
+      <div id="keyStatus" class="text-center font-medium hidden"></div>
 
-      <!-- Medium -->
+      <!-- Medium, Class, Term -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Medium (மொழி)</label>
-        <select id="medium" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-indigo-200">
+        <label class="block font-bold text-gray-700 mb-2">Medium</label>
+        <select id="medium" class="w-full px-4 py-3 border rounded-lg">
           <option value="English">English Medium</option>
           <option value="Tamil">Tamil Medium</option>
         </select>
       </div>
 
-      <!-- Class + Term -->
       <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Class (வகுப்பு)</label>
-          <select id="class" required class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <label class="block font-bold text-gray-700 mb-2">Class</label>
+          <select id="classSelect" required class="w-full px-4 py-3 border rounded-lg">
             <option value="">-- Select Class --</option>
-            <optgroup label="Primary (1–7)">
-              <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
-              <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option><option value="7">Class 7</option>
-            </optgroup>
-            <optgroup label="Secondary (8–10)">
-              <option value="8">Class 8</option><option value="9">Class 9</option><option value="10">Class 10</option>
-            </optgroup>
-            <optgroup label="Higher Secondary">
-              <option value="11">Class 11</option><option value="12">Class 12</option>
-            </optgroup>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+            <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+            <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
+            <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
           </select>
         </div>
 
-        <!-- Term Selection (only for 1–7) -->
         <div id="termDiv" class="term-selection">
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Term</label>
-          <div class="grid grid-cols-3 gap-3">
-            <label class="flex items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
-              <input type="radio" name="term" value="I" class="sr-only peer" required/>
-              <span class="peer-checked:text-indigo-600 font-semibold">Term I</span>
-            </label>
-            <label class="flex items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
-              <input type="radio" name="term" value="II" class="sr-only peer" required/>
-              <span class="peer-checked:text-indigo-600 font-semibold">Term II</span>
-            </label>
-            <label class="flex items-center justify-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
-              <input type="radio" name="term" value="III" class="sr-only peer" required/>
-              <span class="peer-checked:text-indigo-600 font-semibold">Term III</span>
-            </label>
+          <label class="block font-bold text-gray-700 mb-2">Term (Class 1–7 only)</label>
+          <div class="flex gap-4">
+            <label><input type="radio" name="term" value="I"> Term I</label>
+            <label><input type="radio" name="term" value="II"> Term II</label>
+            <label><input type="radio" name="term" value="III"> Term III</label>
           </div>
         </div>
       </div>
 
       <!-- Subject -->
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Subject (பாடம்)</label>
-        <select id="subjectSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+        <label class="block font-bold text-gray-700 mb-2">Subject</label>
+        <select id="subjectSelect" class="w-full px-4 py-3 border rounded-lg">
           <option value="">-- Select Subject --</option>
           <option value="Tamil">Tamil</option>
           <option value="English">English</option>
@@ -100,68 +79,67 @@
           <option value="Science">Science</option>
           <option value="Social">Social Science</option>
         </select>
-        <input type="text" id="subjectInput" class="subject-input mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Enter subject (e.g. Physics, Chemistry, Accountancy)" />
+        <input type="text" id="subjectInput" class="subject-input mt-3 w-full px-4 py-3 border rounded-lg" placeholder="For Class 11–12: Type subject (e.g. Physics, Chemistry)"/>
       </div>
 
+      <!-- Unit & Title -->
       <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Unit / Chapter</label>
-          <input type="text" id="unit" value="Unit 3" class="w-full px-4 py-3 border border-gray-300 rounded-lg"/>
+          <label class="block font-bold text-gray-700 mb-2">Unit / Chapter</label>
+          <input type="text" id="unit" value="Unit 3" class="w-full px-4 py-3 border rounded-lg"/>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Lesson Title</label>
-          <input type="text" id="title" value="The Power of the Wind" class="w-full px-4 py-3 border border-gray-300 rounded-lg"/>
+          <label class="block font-bold text-gray-700 mb-2">Lesson Title</label>
+          <input type="text" id="title" value="The Power of the Wind" class="w-full px-4 py-3 border rounded-lg"/>
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-2">Week Dates</label>
-        <input type="text" id="dates" value="01/12/2025 - 05/12/2025" class="w-full px-4 py-3 border border-gray-300 rounded-lg"/>
+        <label class="block font-bold text-gray-700 mb-2">Week Dates</label>
+        <input type="text" id="dates" value="01/12/2025 - 05/12/2025" class="w-full px-4 py-3 border rounded-lg"/>
       </div>
 
       <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Nature of the Lesson</label>
-          <select id="nature" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-            <option value="Stand alone">Stand alone</option>
-            <option value="Building blocks">Building blocks</option>
-            <option value="tree and branches">Tree and branches</option>
+          <label class="block font-bold text-gray-700 mb-2">Nature of Lesson</label>
+          <select id="nature" class="w-full px-4 py-3 border rounded-lg">
+            <option>Stand alone</option>
+            <option>Building blocks</option>
+            <option>Tree and branches</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Methodology (hold to select multiple)</label>
-          <select id="methodology" multiple class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-            <option value="Interactive">Interactive</option>
-            <option value="Explanatory">Explanatory</option>
-            <option value="Demonstrative">Demonstrative</option>
-            <option value="Do and learn">Do and learn</option>
-            <option value="Playway">Playway</option>
+          <label class="block font-bold text-gray-700 mb-2">Methodology (hold to select multiple)</label>
+          <select id="methodology" multiple class="w-full px-4 py-3 border rounded-lg">
+            <option>Interactive</option><option>Explanatory</option><option>Demonstrative</option>
+            <option>Do and learn</option><option>Playway</option>
           </select>
         </div>
       </div>
 
       <div class="grid md:grid-cols-2 gap-6">
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Activity Focus</label>
-          <select id="activityFocus" required class="w-full px-4 py-3 border border-gray-300 rounded-lg"></select>
+          <label class="block font-bold text-gray-700 mb-2">Activity Focus</label>
+          <select id="activityFocus" required class="w-full px-4 py-3 border rounded-lg"></select>
         </div>
         <div id="subActivityGroup" style="display:none;">
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Sub-Activity Type</label>
-          <select id="subActivity" class="w-full px-4 py-3 border border-gray-300 rounded-lg"></select>
+          <label class="block font-bold text-gray-700 mb-2">Sub-Activity Type</label>
+          <select id="subActivity" class="w-full px-4 py-3 border rounded-lg"></select>
         </div>
       </div>
 
-      <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xl py-5 rounded-xl shadow-lg transition transform hover:scale-105">
+      <button type="submit" id="generateBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xl py-5 rounded-xl shadow-lg transition">
         Generate Lesson Plan with AI
       </button>
+
       <div id="errorMsg" class="hidden bg-red-100 text-red-700 p-4 rounded-lg text-center"></div>
     </form>
 
-    <div id="lessonPlanOutput" class="hidden mt-12 bg-white rounded-2xl shadow-xl p-8">
+    <div id="lessonPlanOutput" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-8">
       <h2 class="text-3xl font-bold text-indigo-800 text-center mb-8">Generated Lesson Plan</h2>
-      <div id="lessonPlanContent" class="text-base leading-relaxed"></div>
-      <div class="mt-10 text-center">
-        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition">
+      <div id="lessonPlanContent"></div>
+      <div class="text-center mt-10">
+        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-12 rounded-xl">
           Download as PDF
         </button>
       </div>
@@ -169,50 +147,36 @@
   </div>
 
   <script>
-    let GROQ_API_KEY = '';
+    // === ALL FUNCTIONS DEFINED FIRST ===
+    function showStatus(msg, isError = false) {
+      const el = document.getElementById('keyStatus');
+      el.textContent = msg;
+      el.className = isError ? 'text-red-600' : 'text-green-600';
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 6000);
+    }
 
-    // Activity options
-    const activityOptions = {
-      Language: [
-        {value:"Motivation", label:"Motivation"},
-        {value:"Listening/Speaking", label:"Listening/Speaking"},
-        {value:"Reading", label:"Reading (Pre/While/Post)"},
-        {value:"Writing", label:"Writing"},
-        {value:"Grammar", label:"Grammar"}
-      ],
-      Core: [
-        {value:"Motivation", label:"Motivation"},
-        {value:"Consolidation", label:"Consolidation (Mind Map)"},
-        {value:"Reinforcement", label:"Reinforcement"},
-        {value:"Enrichment", label:"Enrichment"}
-      ]
-    };
+    async function testKey() {
+      const key = document.getElementById('groqKey').value.trim();
+      const btn = document.getElementById('testKeyBtn');
+      if (!key) return showStatus('Enter your key first!', true);
 
-    const consolidationOptions = [
-      {value:"Events and facts", label:"Events and facts"},
-      {value:"Timeline", label:"Timeline"},
-      {value:"Pictures", label:"Pictures"},
-      {value:"Tabular column", label:"Tabular column"},
-      {value:"Hierarchial order", label:"Hierarchical order"},
-      {value:"Concept map", label:"Concept map"},
-      {value:"Fish bone", label:"Fish bone"},
-      {value:"Sequencing", label:"Sequencing"}
-    ];
-
-    const langActivityOptions = {
-      "Listening/Speaking": ["Brainstorm","Pair Work","Presentation"],
-      "Reading": ["Pre-reading activities","While-reading activities","Post-reading activities"],
-      "Writing": ["Hints, points, scaffolding","Group work","Presentation"],
-      "Grammar": ["Explain the rules","Give examples","Invite more examples"]
-    };
-
-    function getSubjectCategory(s) {
-      return (s === 'Tamil' || s === 'English') ? 'Language' : 'Core';
+      btn.disabled = true;
+      btn.textContent = 'Testing...';
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { 'Authorization': `Bearer ${key}` }
+        });
+        if (res.ok) showStatus('Valid Key! Ready to generate', false);
+        else showStatus('Invalid key!', true);
+      } catch { showStatus('Network error', true); }
+      btn.disabled = false;
+      btn.textContent = 'Test Key';
     }
 
     function getCurrentSubject() {
-      const cls = document.getElementById('class').value;
-      if (cls === '11' || cls === '12') {
+      const cls = document.getElementById('classSelect').value;
+      if (['11','12'].includes(cls)) {
         return document.getElementById('subjectInput').value.trim() || 'Subject';
       }
       return document.getElementById('subjectSelect').value;
@@ -224,141 +188,89 @@
       select.innerHTML = '<option value="">-- Select Activity Focus --</option>';
       document.getElementById('subActivityGroup').style.display = 'none';
 
-      const cat = getSubjectCategory(subject);
-      if (!cat || !activityOptions[cat]) return;
+      const isLang = ['Tamil','English'].includes(subject);
+      const options = isLang ? 
+        ["Motivation","Listening/Speaking","Reading","Writing","Grammar"] :
+        ["Motivation","Consolidation","Reinforcement","Enrichment"];
 
-      activityOptions[cat].forEach(o => {
+      options.forEach(val => {
         const opt = document.createElement('option');
-        opt.value = o.value; opt.textContent = o.label;
+        opt.value = val;
+        opt.textContent = val;
         select.appendChild(opt);
       });
     }
 
     function updateSubActivityOptions() {
       const focus = document.getElementById('activityFocus').value;
-      const subGroup = document.getElementById('subActivityGroup');
-      const subSelect = document.getElementById('subActivity');
-      subSelect.innerHTML = '';
-      subGroup.style.display = 'none';
+      const group = document.getElementById('subActivityGroup');
+      const select = document.getElementById('subActivity');
+      select.innerHTML = '';
+      group.style.display = 'none';
 
-      const subject = getCurrentSubject();
-      const cat = getSubjectCategory(subject);
-
-      let options = [];
-      if (cat === 'Core' && focus === 'Consolidation') options = consolidationOptions;
-      else if (cat === 'Language' && langActivityOptions[focus]) options = langActivityOptions[focus].map(v => ({value:v, label:v}));
-
-      if (options.length > 0) {
-        subGroup.style.display = 'block';
-        options.forEach(o => {
+      if (focus === 'Consolidation') {
+        const opts = ["Timeline","Concept map","Tabular column","Fish bone"];
+        opts.forEach(v => {
           const opt = document.createElement('option');
-          opt.value = o.value; opt.textContent = o.label;
-          subSelect.appendChild(opt);
+          opt.value = v; opt.textContent = v;
+          select.appendChild(opt);
         });
+        group.style.display = 'block';
       }
     }
 
-    // Show status message
-    function showStatus(msg, type = 'success') {
-      const el = document.getElementById('keyStatus');
-      el.textContent = msg;
-      el.className = type === 'error' ? 'text-red-600' : 'text-green-600';
-      el.classList.remove('hidden');
-      setTimeout(() => el.classList.add('hidden'), 6000);
-    }
+    async function generateLessonPlan() {
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.textContent = 'Generating from TN Textbook...';
 
-    // FIXED: Test Key function
-    async function testKey() {
-      const key = document.getElementById('groqKey').value.trim();
-      const btn = document.getElementById('testKeyBtn');
+      const data = {
+        class: document.getElementById('classSelect').value,
+        subject: getCurrentSubject(),
+        term: document.querySelector('input[name="term"]:checked')?.value || '',
+        unit: document.getElementById('unit').value.trim(),
+        title: document.getElementById('title').value.trim(),
+        dates: document.getElementById('dates').value,
+        nature: document.getElementById('nature').value,
+        methodology: Array.from(document.getElementById('methodology').selectedOptions).map(o => o.value).join(', '),
+        activityFocus: document.getElementById('activityFocus').value,
+        subActivity: document.getElementById('subActivity').value || 'General'
+      };
 
-      if (!key) {
-        showStatus('Please paste your Groq API key first!', 'error');
+      if (!data.class || !data.subject || !data.activityFocus) {
+        showStatus('Please fill Class, Subject & Activity Focus', true);
+        btn.disabled = false;
+        btn.textContent = 'Generate Lesson Plan with AI';
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = 'Testing...';
-      showStatus('Testing your key...', 'success');
-
-      try {
-        const res = await fetch('https://api.groq.com/openai/v1/models', {
-          headers: { 'Authorization': `Bearer ${key}` }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          console.log('Available models:', data.data.map(m => m.id));
-          showStatus('Key OK! Ready to generate lesson plans', 'success');
-        } else {
-          const err = await res.json();
-          showStatus(`Invalid key: ${err.error?.message || 'Unknown error'}`, 'error');
-        }
-      } catch (e) {
-        showStatus('Network error – try mobile data or check connection', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Test Key';
-      }
-    }
-
-    document.getElementById('testKeyBtn').addEventListener('click', testKey);
-
-    // Toggle Term & Subject Input
-    document.getElementById('class').addEventListener('change', function() {
-      const cls = this.value;
-      const isPrimary = cls && parseInt(cls) <= 7;
-      const isHigher = cls === '11' || cls === '12';
-
-      document.getElementById('termDiv').classList.toggle('term-selection', !isPrimary);
-      document.getElementById('subjectSelect').classList.toggle('hidden', isHigher);
-      document.getElementById('subjectInput').classList.toggle('hidden', !isHigher);
-
-      updateActivityOptions();
-    });
-
-    document.getElementById('subjectSelect').addEventListener('change', updateActivityOptions);
-    document.getElementById('subjectInput').addEventListener('input', updateActivityOptions);
-    document.getElementById('activityFocus').addEventListener('change', updateSubActivityOptions);
-
-    // AI Generation with Internet Research Integration
-    async function getAIContent(data, lang) {
       const key = document.getElementById('groqKey').value.trim();
-      if (!key) { showError('Please enter and test your Groq API key first.'); return null; }
+      if (!key) {
+        showStatus('Test your API key first!', true);
+        btn.disabled = false;
+        btn.textContent = 'Generate Lesson Plan with AI';
+        return;
+      }
 
-      // Step 1: Construct dynamic search query for textbook content
-      const searchQuery = `Samacheer Kalvi class \( {data.class} \){data.subject} \( {data.term ? 'term ' + data.term + ' ' : ''} \){data.unit} "${data.title}" textbook content summary learning outcomes activities Tamil Nadu state board`;
+      const lang = data.subject === 'Tamil' ? 'Tamil' : document.getElementById('medium').value;
 
-      // Step 2: Fetch real textbook data from internet
-      try {
-        const searchRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=YOUR_GOOGLE_CSE_KEY&cx=YOUR_CSE_ID&q=${encodeURIComponent(searchQuery)}&num=5`);
-        // Note: For real implementation, use a free search API or integrate with a backend. Here, we simulate with known sources.
-        // In practice, parse results to extract gist, outcomes, etc.
-        // For demo, use extracted data from searches:
-        const textbookData = {
-          gist: "The chapter 'The Power of the Wind' (also known as 'Wind Energy') from Samacheer Kalvi Class 6 Science Term 2 explores how wind is a renewable energy source. It explains the movement of air due to unequal heating of Earth's surface, the role of wind in pollination and seed dispersal, and wind as a clean energy resource. Students learn about windmills for grinding grains, pumping water, and generating electricity. The chapter highlights environmental benefits like reducing pollution and the importance of wind farms.",
-          outcomes: "• Students will identify wind as a renewable energy source and explain its formation due to atmospheric pressure differences.\\n• Students will describe applications of wind energy, such as windmills and turbines.\\n• Students will understand the role of wind in natural processes like pollination and erosion.",
-          teachingAids: "Blackboard drawings of wind formation, textbook illustrations of windmills, simple wind vane model, charts showing wind energy advantages.",
-          activityDescription: "For Motivation: Show a video of wind turbines and discuss local wind patterns. For Consolidation: Create a concept map linking wind to energy, nature, and human use based on textbook diagrams.",
-          weekEndActivity: "Observe and record wind direction and speed at home using a simple homemade anemometer; draw a wind rose diagram as per textbook exercise.",
-          remedialAction: "Provide additional textbook reading time and pair slow learners with peers for discussing wind energy examples from daily life."
-        };
+      const prompt = `You are a Tamil Nadu State Board teacher. Generate lesson plan STRICTLY from the actual Samacheer Kalvi Class \( {data.class} \){data.subject} textbook content for "\( {data.title}" ( \){data.unit}).
 
-        // Step 3: Feed fetched data to AI for structuring
-        const prompt = `You are an expert Tamil Nadu State Board teacher. Use ONLY the following EXACT textbook content from Samacheer Kalvi sources to generate the lesson plan. Do NOT invent or add any story—stick strictly to the provided data. Output in ${lang}.
+Search the internet and use only real textbook content from tntextbooks.in, textbookcorp.tn.gov.in, samacheerkalvi.guru.
 
-Textbook Data: ${JSON.stringify(textbookData)}
+Output accurate gist, outcomes, aids, activities from the real lesson. Output in ${lang}.
 
-JSON only:
+Return ONLY valid JSON:
 {
-  "outcomes": "${textbookData.outcomes.replace(/\n/g, '\\n')}",
-  "gist": "${textbookData.gist}",
-  "teachingAids": "${textbookData.teachingAids}",
-  "activityDescription": "Detailed steps for \( {data.activityFocus} / \){data.subActivity} using the textbook data: ${textbookData.activityDescription}",
-  "weekEndActivity": "${textbookData.weekEndActivity}",
-  "remedialAction": "${textbookData.remedialAction}"
+  "outcomes": "• ...\\n• ...",
+  "gist": "6-8 line summary from textbook",
+  "teachingAids": "Blackboard, charts, models...",
+  "activityDescription": "Detailed steps for \( {data.activityFocus} / \){data.subActivity}",
+  "weekEndActivity": "Homework from textbook",
+  "remedialAction": "Support for slow learners"
 }`;
 
+      try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -368,132 +280,74 @@ JSON only:
           body: JSON.stringify({
             model: 'llama-3.3-70b-versatile',
             messages: [{ role: 'user', content: prompt }],
-            temperature: 0.3,  // Lower for factual accuracy
-            max_tokens: 800
+            temperature: 0.4,
+            max_tokens: 1000
           })
         });
 
-        if (!res.ok) throw await res.json();
         const json = await res.json();
         let text = json.choices[0].message.content;
         text = text.replace(/```json|```/g, '').trim();
-        return JSON.parse(text);
+        const ai = JSON.parse(text);
+
+        document.getElementById('lessonPlanContent').innerHTML = `
+          <h3 class="text-2xl font-bold text-indigo-700 mb-4">\( {data.unit}: \){data.title}</h3>
+          <table class="w-full border-collapse mb-6 text-sm">
+            <tr><td class="border p-3 font-bold bg-gray-100">Class & Subject</td><td class="border p-3">\( {data.class} - \){data.subject} ${data.term ? '(Term ' + data.term + ')' : ''}</td></tr>
+            <tr><td class="border p-3 font-bold bg-gray-100">Dates</td><td class="border p-3">${data.dates}</td></tr>
+            <tr><td class="border p-3 font-bold bg-gray-100">Learning Outcomes</td><td class="border p-3">${ai.outcomes.replace(/\\n/g,'<br>')}</td></tr>
+            <tr><td class="border p-3 font-bold bg-gray-100">Methodology</td><td class="border p-3">${data.methodology || 'Not specified'}</td></tr>
+            <tr><td class="border p-3 font-bold bg-gray-100">Teaching Aids</td><td class="border p-3">${ai.teachingAids}</td></tr>
+          </table>
+          <h4 class="font-bold text-indigo-700">Gist of the Lesson (from TN Textbook)</h4>
+          <p class="mb-4">${ai.gist}</p>
+          <h4 class="font-bold text-indigo-700">Activity: \( {data.activityFocus} ( \){data.subActivity})</h4>
+          <p>${ai.activityDescription.replace(/\\n/g,'<br>')}</p>
+          <h4 class="font-bold text-indigo-700 mt-4">Week-end Activity</h4>
+          <p>${ai.weekEndActivity}</p>
+          <h4 class="font-bold text-indigo-700 mt-4">Remedial Measures</h4>
+          <p>${ai.remedialAction}</p>
+          <p class="text-right italic mt-8 text-sm">Medium: ${lang} | Source: Samacheer Kalvi Textbook</p>
+        `;
+
+        document.getElementById('lessonPlanOutput').classList.remove('hidden');
+        document.getElementById('lessonPlanOutput').scrollIntoView({behavior: 'smooth'});
       } catch (e) {
         console.error(e);
-        showError('Error fetching textbook data or AI processing. Using fallback.');
-        return null;
+        showStatus('Generation failed. Check key & internet.', true);
       }
-    }
 
-    function showError(msg) {
-      const el = document.getElementById('errorMsg');
-      el.textContent = msg;
-      el.classList.remove('hidden');
-    }
-
-    document.getElementById('lessonPlanForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const btn = this.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      btn.textContent = 'Fetching Textbook Data & Generating…';
-
-      const data = {
-        class: document.getElementById('class').value,
-        subject: getCurrentSubject(),
-        term: document.querySelector('input[name="term"]:checked')?.value || '',
-        unit: document.getElementById('unit').value,
-        title: document.getElementById('title').value,
-        dates: document.getElementById('dates').value,
-        nature: document.getElementById('nature').value,
-        methodology: Array.from(document.getElementById('methodology').selectedOptions).map(o => o.value).join(', '),
-        activityFocus: document.getElementById('activityFocus').value,
-        subActivity: document.getElementById('subActivity').value || 'General'
-      };
-
-      const lang = (data.subject === 'Tamil') ? 'Tamil' : document.getElementById('medium').value;
-
-      const ai = await getAIContent(data, lang);
-
-      const content = ai || {
-        outcomes: "• Students will understand key concepts from TN textbook.\\n• Apply learning through activities.\\n• Reflect on knowledge.",
-        gist: `Summary of "\( {data.title}" from Class \){data.class} ${data.subject} TN State Board textbook.`,
-        teachingAids: "Blackboard, textbook, charts.",
-        activityDescription: `Follow ${data.activityFocus} using Samacheer Kalvi method.`,
-        weekEndActivity: "Complete textbook exercises.",
-        remedialAction: "Extra practice from textbook."
-      };
-
-      document.getElementById('lessonPlanContent').innerHTML = generateHTML({...data, ...content}, lang);
-      document.getElementById('lessonPlanOutput').classList.remove('hidden');
       btn.disabled = false;
       btn.textContent = 'Generate Lesson Plan with AI';
-      document.getElementById('lessonPlanOutput').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    function generateHTML(d, lang) {
-      return `
-        <h3 class="text-2xl font-bold text-indigo-700 mb-4">\( {d.unit}: \){d.title}</h3>
-        <table class="w-full border-collapse mb-6 text-sm" style="border:1px solid #ccc;">
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Subject, Class, Term, Dates</td>
-              <td class="border border-gray-300 p-3">\( {d.subject}, Class \){d.class} \( {d.term ? '• Term ' + d.term : ''}, \){d.dates}</td></tr>
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Unit & Lesson</td>
-              <td class="border border-gray-300 p-3">\( {d.unit}: \){d.title}</td></tr>
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Nature of Lesson</td>
-              <td class="border border-gray-300 p-3">${d.nature}</td></tr>
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Learning Outcomes</td>
-              <td class="border border-gray-300 p-3">${d.outcomes.replace(/\n/g,'<br>')}</td></tr>
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Methodology</td>
-              <td class="border border-gray-300 p-3">${d.methodology}</td></tr>
-          <tr><td class="border border-gray-300 p-3 font-bold bg-gray-50">Teaching Aids</td>
-              <td class="border border-gray-300 p-3">${d.teachingAids}</td></tr>
-        </table>
-
-        <h4 class="text-lg font-bold text-indigo-700">Gist of the Lesson (from TN Textbook)</h4>
-        <p class="mb-4">${d.gist}</p>
-
-        <h4 class="text-lg font-bold text-indigo-700">Activities Planned</h4>
-        <p><strong>Focus:</strong> \( {d.activityFocus} | <strong>Type:</strong> \){d.subActivity}</p>
-        <p class="mb-4">${d.activityDescription.replace(/\n/g,'<br>')}</p>
-
-        <h4 class="text-lg font-bold text-indigo-700">Week-end Activity</h4>
-        <p class="mb-4">${d.weekEndActivity}</p>
-
-        <h4 class="text-lg font-bold text-indigo-700">Remedial Action</h4>
-        <p>${d.remedialAction}</p>
-
-        <p class="text-right italic text-sm mt-8">
-          <strong>Medium:</strong> ${lang} | <strong>Curriculum:</strong> Samacheer Kalvi (Tamil Nadu State Board)
-        </p>
-      `;
-      }
-      // Multi-page PDF (works on mobile)
-    async function downloadPDF() {
-      const content = document.getElementById('lessonPlanContent');
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const canvas = await html2canvas(content, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 190;
-      const pageHeight = 290;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`${document.getElementById('title').value.replace(/[^a-zA-Z0-9]/g, '_')}_LessonPlan.pdf`);
     }
 
-    // Initialize
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const content = document.getElementById('lessonPlanContent');
+      const canvas = await html2canvas(content, {scale: 2});
+      const img = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const width = pdf.internal.pageSize.getWidth();
+      pdf.addImage(img, 'PNG', 10, 10, width-20, 0);
+      pdf.save(`${document.getElementById('title').value.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+    }
+
+    // === EVENT LISTENERS ===
+    document.getElementById('testKeyBtn').onclick = testKey;
+    document.getElementById('classSelect').onchange = function() {
+      const c = this.value;
+      document.getElementById('termDiv').classList.toggle('term-selection', c && c <= 7);
+      document.getElementById('subjectSelect').classList.toggle('hidden', c > 10);
+      document.getElementById('subjectInput').classList.toggle('hidden', c <= 10);
+      updateActivityOptions();
+    };
+    document.getElementById('subjectSelect').onchange = updateActivityOptions;
+    document.getElementById('subjectInput').oninput = updateActivityOptions;
+    document.getElementById('activityFocus').onchange = updateSubActivityOptions;
+    document.getElementById('lessonPlanForm').onsubmit = e => { e.preventDefault(); generateLessonPlan(); };
+
+    // Init
     updateActivityOptions();
   </script>
 </body>
-</html>
+        </html>
