@@ -128,6 +128,9 @@ function setStatus(msg){
     else { box.classList.remove("hidden"); box.textContent = msg; }
 }
 
+/* STORE OCR TEXT */
+let fullOCRText = "";
+
 /* PDF UPLOAD LISTENER */
 document.getElementById("pdfFile").addEventListener("change", () => {
     pageInputs.classList.remove("hidden");
@@ -158,23 +161,19 @@ async function ocrSelectedPages(file, start, end) {
     return text;
 }
 
-/* AUTO-FILL DETECTION FROM OCR */
+/* AUTO-FILL DETECTION */
 function autoFillFields(text) {
     text = text.replace(/\s+/g, " ");
 
-    // Title detection (first line with capital letters)
     let titleMatch = text.match(/([A-Z][A-Za-z ]{3,})/);
     if (titleMatch) lessonTitle.value = titleMatch[1];
 
-    // Author detection
     let authorMatch = text.match(/By ([A-Za-z .]+)/i);
     if (authorMatch) lessonAuthor.value = authorMatch[1];
 
-    // Class detection
     let classMatch = text.match(/Class ?(\d+)/i);
     if (classMatch) cls.value = classMatch[1];
 
-    // Unit detection
     let unitMatch = text.match(/Unit ?(\d+)/i);
     if (unitMatch) unitInput.value = "Unit " + unitMatch[1];
 }
@@ -191,9 +190,9 @@ runOCR.addEventListener("click", async () => {
         return;
     }
 
-    const rawText = await ocrSelectedPages(file, fp, tp);
+    fullOCRText = await ocrSelectedPages(file, fp, tp);
 
-    autoFillFields(rawText);
+    autoFillFields(fullOCRText);
 
     formSection.classList.remove("hidden");
     formSection.scrollIntoView({ behavior: "smooth" });
@@ -201,15 +200,13 @@ runOCR.addEventListener("click", async () => {
 });
 
 /* BUILD FULL 10-POINT LESSON PLAN */
-function buildLessonPlan(rawText) {
+function buildLessonPlan() {
 
-    // Extract gist from OCR text (first 120 words)
-    const gist = rawText.replace(/\s+/g, " ").split(" ").slice(0, 120).join(" ");
+    const gist = fullOCRText.replace(/\s+/g, " ").trim();
 
     return `
       <div class="space-y-10">
 
-        <!-- 1. SUBJECT / CLASS / SECTION / DATES -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">1. Subject, Class, Section, Dates</h3>
           <p>
@@ -220,7 +217,6 @@ function buildLessonPlan(rawText) {
           </p>
         </div>
 
-        <!-- 2. UNIT / TITLE / AUTHOR -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">2. Unit, Title, Author</h3>
           <p>
@@ -230,81 +226,70 @@ function buildLessonPlan(rawText) {
           </p>
         </div>
 
-        <!-- 3. NATURE & FORMAT -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">3. Nature of the Lesson & Format</h3>
           <p>
-            <b>Nature:</b> Stand-alone / Building-Blocks / Tree-and-Branches (Teacher may choose)<br>
-            <b>Format & Duration:</b> Interactive Session (40–45 mins)
+            <b>Nature:</b> Stand-alone / Building-blocks / Tree & Branches<br>
+            <b>Format & Duration:</b> Interactive (40–45 mins)
           </p>
         </div>
 
-        <!-- 4. LEARNING OUTCOMES -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">4. Learning Outcomes</h3>
           <ul class="list-disc ml-6">
-            <li>Students will understand the main ideas of the lesson.</li>
-            <li>Students will be able to use new vocabulary in context.</li>
-            <li>Students will develop listening, speaking, reading and writing skills.</li>
-            <li>Students will respond orally and in writing based on the text.</li>
-            <li>Students will participate in class-based activities confidently.</li>
+            <li>Understand the theme and ideas of the lesson.</li>
+            <li>Improve vocabulary and sentence usage.</li>
+            <li>Develop LSRW skills.</li>
+            <li>Engage in meaningful discussion.</li>
+            <li>Answer comprehension questions confidently.</li>
           </ul>
         </div>
 
-        <!-- 5. METHODOLOGY -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">5. Methodology</h3>
-          <p>Interactive / Explanatory / Demonstrative / Do-and-Learn / Play-Way Method.</p>
+          <p>Interactive / Demonstrative / Explanatory / Play-way / Do-and-learn.</p>
         </div>
 
-        <!-- 6. TEACHING AIDS -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">6. Teaching Aids</h3>
           <ul class="list-disc ml-6">
             <li>Textbook</li>
-            <li>Blackboard / Smartboard</li>
-            <li>Charts or Flashcards</li>
-            <li>Activity sheets / Worksheets</li>
-            <li>Audio-visual aids (If applicable)</li>
+            <li>Blackboard or Smartboard</li>
+            <li>Charts / Flashcards</li>
+            <li>Worksheets</li>
+            <li>Audio/video aids</li>
           </ul>
         </div>
 
-        <!-- 7. GIST OF THE LESSON -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">7. Content / Gist of the Lesson</h3>
-          <p>${gist || "Lesson summary extracted from OCR pages."}</p>
+          <p>${gist}</p>
         </div>
 
-        <!-- 8. ACTIVITIES -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">8. Activities Planned</h3>
-          <p><b>Motivation:</b> Teacher initiates the topic using simple questioning or visuals.</p>
-
-          <p class="mt-2"><b>Choose activity type based on lesson:</b></p>
-
+          <p><b>Motivation:</b> Teacher introduces the lesson using simple questions.</p>
           <ul class="list-disc ml-6 mt-2">
-            <li><b>Listening / Speaking:</b> Brainstorming, Pair Work, Group Presentation.</li>
-            <li><b>Reading:</b> Pre-Reading, While-Reading, Post-Reading tasks.</li>
-            <li><b>Lesson:</b> Consolidation, Reinforcement, Enrichment activities.</li>
-            <li><b>Writing:</b> Hints, Scaffolding, Group Work, Presentation.</li>
-            <li><b>Grammar:</b> Explanation, Examples, Student-generated examples.</li>
+            <li><b>Listening/Speaking:</b> Brainstorm, Pair Work, Presentation.</li>
+            <li><b>Reading:</b> Pre-reading, While-reading, Post-reading tasks.</li>
+            <li><b>Lesson:</b> Consolidation, Reinforcement, Enrichment.</li>
+            <li><b>Writing:</b> Hints, Scaffolding, Group Work.</li>
+            <li><b>Grammar:</b> Rules → Examples → Student examples.</li>
           </ul>
         </div>
 
-        <!-- 9. WEEK-END ACTIVITY -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">9. Week-End Activity</h3>
-          <p>Students complete an assignment, worksheet, or small project related to the lesson.</p>
+          <p>Worksheet / Assignment / Small project based on the lesson.</p>
         </div>
 
-        <!-- 10. REMEDIAL ACTION -->
         <div>
           <h3 class="text-xl font-bold text-indigo-700">10. Remedial Action</h3>
           <ul class="list-disc ml-6">
-            <li>Provide simplified notes for slow learners.</li>
-            <li>Extra vocabulary practice.</li>
-            <li>One-to-one reading/speaking support.</li>
-            <li>Re-teaching difficult concepts.</li>
+            <li>Extra support for slow learners.</li>
+            <li>Vocabulary reinforcement.</li>
+            <li>Reading aloud practice.</li>
+            <li>Re-teaching difficult areas.</li>
           </ul>
         </div>
 
@@ -314,7 +299,7 @@ function buildLessonPlan(rawText) {
 
 /* GENERATE LESSON PLAN */
 document.getElementById("generatePlan").addEventListener("click", () => {
-    content.innerHTML = buildLessonPlan(" ");
+    content.innerHTML = buildLessonPlan();
     result.classList.remove("hidden");
     result.scrollIntoView({ behavior: "smooth" });
 });
@@ -334,5 +319,4 @@ function downloadPDF() {
 </script>
 
 </body>
-  
 </html>
