@@ -1,208 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TN Board Lesson Plan – Instant & Free</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TNSB Lesson Plan – From Uploaded Textbook (Tamil + English)</title>
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+  <!-- Tesseract.js for OCR (Tamil + English) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+  <!-- jsPDF + html2canvas for PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
     .hidden { display: none !important; }
   </style>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-4xl font-bold text-center text-indigo-800 mb-2">Tamil Nadu State Board</h1>
-    <h2 class="text-2xl text-center text-indigo-700 mb-8">Instant Lesson Plan Generator (Classes 1–12)</h2>
 
-    <div class="bg-green-100 border border-green-400 rounded-xl p-6 mb-8 text-center">
-      <p class="text-lg font-bold text-green-800">No API Key Needed • Works Instantly • 100% Textbook Accurate</p>
+    <h1 class="text-4xl font-bold text-center text-indigo-800 mb-2">
+      Tamil Nadu State Board
+    </h1>
+    <h2 class="text-2xl text-center text-indigo-700 mb-6">
+      Lesson Plan Generator (Directly From Your Textbook)
+    </h2>
+
+    <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-4 mb-6 text-center">
+      <p class="text-base md:text-lg font-semibold text-yellow-800">
+        Upload TNSB textbook PDF → App reads it (Tamil + English) → You select chapter → Lesson plan is created from that chapter only.
+      </p>
     </div>
 
-    <form id="form" class="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-      <div class="grid md:grid-cols-3 gap-6">
-        <div>
-          <label class="block font-bold mb-2">Class</label>
-          <select id="class" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" required>
-            <option value="">Select Class</option>
-            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
-            <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
-            <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
-            <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-          </select>
-        </div>
+    <!-- Status / Progress -->
+    <div id="status"
+         class="hidden mb-4 text-center text-sm md:text-base text-indigo-800 bg-indigo-100 border border-indigo-300 rounded-lg px-3 py-2">
+    </div>
 
-        <div id="termBox" class="hidden">
-          <label class="block font-bold mb-2">Term</label>
-          <div class="flex gap-6 justify-center">
-            <label class="flex items-center"><input type="radio" name="term" value="I" class="mr-2"> Term I</label>
-            <label class="flex items-center"><input type="radio" name="term" value="II" class="mr-2"> Term II</label>
-            <label class="flex items-center"><input type="radio" name="term" value="III" class="mr-2"> Term III</label>
-          </div>
-        </div>
+    <!-- FORM -->
+    <form id="form" class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
 
-        <div>
-          <label class="block font-bold mb-2">Subject</label>
-          <select id="subject" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg">
-            <option value="">Select Subject</option>
-            <option value="Tamil">Tamil</option>
-            <option value="English">English</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Science">Science</option>
-            <option value="Social Science">Social Science</option>
-            <option value="Physics">Physics (11-12)</option>
-            <option value="Chemistry">Chemistry (11-12)</option>
-            <option value="Biology">Biology (11-12)</option>
-            <option value="Computer Science">Computer Science</option>
-          </select>
-        </div>
+      <!-- Upload PDF -->
+      <div>
+        <label class="block font-bold mb-2">Upload Textbook PDF</label>
+        <input type="file" id="pdfFile" accept="application/pdf"
+               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white" required />
+        <p class="text-xs text-gray-500 mt-1">
+          Use any TNSB textbook PDF (Tamil / English / Science / Social, etc.).
+        </p>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-6">
-        <div>
-          <label class="block font-bold mb-2">Unit / Lesson Title</label>
-          <input type="text" id="title" placeholder="e.g. The Power of the Wind, Real Numbers, Heat" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" required />
-        </div>
-        <div>
-          <label class="block font-bold mb-2">Week Dates</label>
-          <input type="text" id="dates" value="02/12/2025 - 06/12/2025" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" />
-        </div>
+      <!-- Chapter dropdown (auto-filled after reading PDF) -->
+      <div id="chapterBox" class="hidden">
+        <label class="block font-bold mb-2">Select Chapter / Lesson</label>
+        <select id="chapterSelect"
+                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white">
+        </select>
+        <p class="text-xs text-gray-500 mt-1">
+          These titles are auto-detected from the textbook (அலகு, பாடம், Unit, Lesson, Chapter...).
+        </p>
       </div>
 
-      <button type="submit" id="generateBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold text-2xl py-6 rounded-xl shadow-2xl hover:shadow-purple-500 transition transform hover:scale-105">
-        Generate Lesson Plan Instantly
+      <!-- Week Dates -->
+      <div>
+        <label class="block font-bold mb-2">Week Dates</label>
+        <input id="dates" value="02/12/2025 - 06/12/2025"
+               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" />
+      </div>
+
+      <button type="submit"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xl md:text-2xl py-4 md:py-5 rounded-xl shadow-xl">
+        Generate Lesson Plan
       </button>
     </form>
 
     <!-- RESULT -->
-    <div id="result" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-10 border-4 border-indigo-200">
-      <h2 class="text-3xl font-bold text-center text-indigo-800 mb-8">Lesson Plan – Samacheer Kalvi</h2>
-      <div id="content" class="text-lg leading-relaxed"></div>
-      <div class="text-center mt-12">
-        <button onclick="downloadPDF()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
+    <div id="result"
+         class="hidden mt-10 bg-white rounded-2xl shadow-2xl p-6 md:p-10 border-4 border-indigo-200">
+      <h2 class="text-2xl md:text-3xl font-bold text-center text-indigo-800 mb-6">
+        Lesson Plan
+      </h2>
+
+      <div id="content" class="text-base md:text-lg leading-relaxed"></div>
+
+      <div class="text-center mt-10">
+        <button onclick="downloadPDF()"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold text-lg md:text-xl py-3 md:py-4 px-10 md:px-16 rounded-xl shadow-lg">
           Download as PDF
         </button>
       </div>
     </div>
+
   </div>
 
-  <script>
-    // Show Term only for Class 1–7
-    document.getElementById('class').onchange = function() {
-      const c = this.value;
-      document.getElementById('termBox').classList.toggle('hidden', !(c && c <= 7));
-    };
+<script>
+  // Needed for pdf.js worker
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+  }
 
-    // Built-in accurate textbook content (updated regularly from official sources)
-    const textbookDB = {
-      "6_Science_The Power of the Wind": {
-        outcomes: "• Understand wind as a renewable energy source\n• Explain formation of wind due to unequal heating\n• Identify uses of wind energy (grinding, pumping, electricity)\n• Appreciate wind as clean energy",
-        gist: "Wind is moving air caused by unequal heating of Earth's surface. Hot air rises, cool air rushes in → wind. Wind has been used for sailing, grinding grains, pumping water. Modern windmills generate electricity. Wind energy is renewable, clean and reduces pollution. Tamil Nadu has many wind farms.",
-        aids: "Blackboard, wind vane model, pictures of windmills, video of wind farm",
-        activity: "Students make a simple pinwheel and observe how wind makes it spin. Discuss: How can we use this in daily life?",
-        homework: "Draw a windmill and label its parts. Write 3 advantages of wind energy.",
-        remedial: "Show slow learners a working model and let them feel the wind from a fan"
-      },
-      "9_Maths_Real Numbers": {
-        outcomes: "• Understand irrational numbers\n• Prove √2 is irrational\n• Perform operations on real numbers\n• Represent real numbers on number line",
-        gist: "Real numbers include rational and irrational numbers. √2, √3, π are irrational. Decimal expansion of rational numbers either terminates or repeats. Euclid's division lemma and Fundamental Theorem of Arithmetic are key concepts.",
-        aids: "Number line chart, proof diagrams, blackboard",
-        activity: "Prove √2 is irrational using contradiction method on blackboard with student participation",
-        homework: "Exercise 1.2: Q4, Q6, Q8 from textbook",
-        remedial: "Extra practice on decimal to fraction conversion"
+  const statusEl = document.getElementById("status");
+
+  function setStatus(msg) {
+    if (!msg) {
+      statusEl.classList.add("hidden");
+      statusEl.textContent = "";
+    } else {
+      statusEl.classList.remove("hidden");
+      statusEl.textContent = msg;
+    }
+  }
+
+  /* ----------------------------------------------------------
+     STEP 1: OCR the entire PDF – Tamil + English
+     (Uses Tesseract.js on each page rendered with pdf.js)
+  ----------------------------------------------------------- */
+  async function ocrFullPDF(file) {
+    const pdf = await pdfjsLib.getDocument({ url: URL.createObjectURL(file) }).promise;
+    let fullText = "";
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      setStatus(`Reading textbook… page ${pageNum} of ${pdf.numPages}`);
+
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      // OCR using Tamil + English
+      const result = await Tesseract.recognize(canvas, "tam+eng");
+      fullText += "\n" + result.data.text;
+    }
+
+    setStatus("Finished reading textbook. Chapters are being detected…");
+    return fullText;
+  }
+
+  /* ----------------------------------------------------------
+     STEP 2: Detect Chapters in Tamil + English
+     Looks for:
+       - Lesson / Unit / Chapter patterns (English)
+       - "அலகு" / "பாடம்" with Tamil or Arabic digits
+       - Simple fallback patterns
+  ----------------------------------------------------------- */
+  function detectChapters(text) {
+    const rawLines = text.split("\n");
+    const lines = rawLines.map(l => l.trim()).filter(l => l.length > 0);
+
+    const chapters = [];
+
+    const tamilDigitPattern = /[0-9௦-௯]+/;
+    const patterns = [
+      /(Lesson|Unit|Chapter)\s*\d+/i,
+      /(அலகு|பாடம்)\s*[0-9௦-௯]+/,
+      /^(அலகு|பாடம்)\s*[-–—]?\s*.+/,   // e.g. "அலகு 1 – எங்கள் சூழல்"
+      /^[IVXLC]+\.\s+.+/                // Roman numbered headings
+    ];
+
+    lines.forEach((line, idx) => {
+      const hasTamil = /[\u0B80-\u0BFF]/.test(line);
+
+      let isHeading = false;
+      for (const p of patterns) {
+        if (p.test(line)) {
+          isHeading = true;
+          break;
+        }
       }
-      // Add more as needed — this is just a sample
-    };
 
-    document.getElementById('form').onsubmit = async function(e) {
-      e.preventDefault();
-      const btn = document.getElementById('generateBtn');
-      btn.textContent = 'Generating...';
-      btn.disabled = true;
+      // Extra heuristic: Tamil big line with digits may be a heading
+      if (!isHeading && hasTamil && tamilDigitPattern.test(line) && line.length < 60) {
+        isHeading = true;
+      }
 
-      const cls = document.getElementById('class').value;
-      const subject = document.getElementById('subject').value;
-      const title = document.getElementById('title').value.trim();
-      const term = document.querySelector('input[name="term"]:checked')?.value || '';
-      const dates = document.getElementById('dates').value;
+      if (isHeading) {
+        chapters.push({ title: line, index: idx });
+      }
+    });
 
-      if (!cls || !subject || !title) {
-        alert('Please fill Class, Subject and Lesson Title');
-        btn.textContent = 'Generate Lesson Plan Instantly';
-        btn.disabled = false;
+    return { lines, chapters };
+  }
+
+  /* ----------------------------------------------------------
+     STEP 3: Extract only selected chapter text
+  ----------------------------------------------------------- */
+  function extractChapterContent(lines, startIndex, nextIndex) {
+    const start = startIndex;
+    const end = nextIndex > 0 ? nextIndex : start + 60; // approx 60 lines fallback
+    return lines.slice(start, end).join(" ");
+  }
+
+  /* ----------------------------------------------------------
+     STEP 4: Build Lesson Plan HTML from extracted chapter text
+  ----------------------------------------------------------- */
+  function buildLessonPlan(title, chapterText, dates) {
+    const safeText = chapterText.replace(/\s+/g, " ").trim();
+
+    return `
+      <div class="mb-6 border-b-4 border-indigo-600 pb-4 text-center">
+        <h3 class="text-2xl md:text-3xl font-bold text-indigo-700 mb-2">${title}</h3>
+        <p class="text-base md:text-lg"><b>Week:</b> ${dates}</p>
+      </div>
+
+      <h4 class="text-xl font-bold text-indigo-700 mb-2">Text from Textbook</h4>
+      <p class="bg-blue-50 p-4 rounded-lg border mb-6">
+        ${safeText || "Text could not be clearly extracted from this chapter."}
+      </p>
+
+      <h4 class="text-xl font-bold text-indigo-700 mb-2">Learning Outcomes</h4>
+      <p class="bg-gray-50 p-4 rounded-lg border mb-6">
+        • Understand the ideas explained in this chapter from the textbook.<br>
+        • Recall key facts, definitions, and examples as given.<br>
+        • Answer questions based only on the textbook content.<br>
+        • Improve reading and understanding of the original lesson.
+      </p>
+
+      <h4 class="text-xl font-bold text-indigo-700 mb-2">Classroom Activity</h4>
+      <p class="bg-green-50 p-4 rounded-lg border mb-6">
+        Read the extracted part of the lesson together with students.<br>
+        Ask oral and written questions directly from this text.
+      </p>
+
+      <h4 class="text-xl font-bold text-indigo-700 mb-2">Homework</h4>
+      <p class="bg-yellow-50 p-4 rounded-lg border mb-6">
+        Instruct students to read this chapter section at home and answer the in-text and end-of-lesson questions from the textbook.
+      </p>
+
+      <h4 class="text-xl font-bold text-indigo-700 mb-2">Remedial Support</h4>
+      <p class="bg-purple-50 p-4 rounded-lg border mb-2">
+        For slow learners, re-read important sentences from the extracted text and explain using simple language and examples.
+      </p>
+    `;
+  }
+
+  /* ----------------------------------------------------------
+     STEP 5: Handle PDF upload → OCR → auto chapter detection
+  ----------------------------------------------------------- */
+  let globalLines = [];
+  let globalChapters = [];
+
+  document.getElementById("pdfFile").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    setStatus("Starting to read the textbook… This may take some time depending on pages.");
+    document.getElementById("chapterBox").classList.add("hidden");
+    globalLines = [];
+    globalChapters = [];
+
+    try {
+      const text = await ocrFullPDF(file);
+      setStatus("Detecting chapters from the textbook…");
+
+      const { lines, chapters } = detectChapters(text);
+      globalLines = lines;
+      globalChapters = chapters;
+
+      const dropdown = document.getElementById("chapterSelect");
+      dropdown.innerHTML = "";
+
+      if (!chapters.length) {
+        setStatus("");
+        alert("No clear chapter headings could be detected. You may need a clearer textbook PDF.");
         return;
       }
 
-      // Smart key for lookup
-      const key = `\( {cls}_ \){subject.replace(/ /g,'_')}_${title.replace(/[^a-zA-Z0-9]/g,'_')}`.substring(0,50);
-
-      let data = textbookDB[key] || textbookDB["6_Science_The Power of the Wind"]; // fallback
-
-      // If not in DB, use smart general content
-      if (!textbookDB[key]) {
-        data = {
-          outcomes: `• Understand the concepts from "${title}"\n• Apply knowledge in real-life situations\n• Develop analytical thinking`,
-          gist: `This lesson "\( {title}" from Class \){cls} ${subject} explains fundamental concepts as per Samacheer Kalvi syllabus. Students learn definitions, examples, and applications with diagrams from the official textbook.`,
-          aids: "Blackboard, textbook diagrams, charts, models",
-          activity: `Interactive discussion on "${title}" with textbook-based questions and examples`,
-          homework: "Complete textbook exercises and answer in-text questions",
-          remedial: "Extra reading time and peer teaching for slow learners"
-        };
-      }
-
-      document.getElementById('content').innerHTML = `
-        <div class="text-center mb-8 border-b-4 border-indigo-600 pb-6">
-          <h3 class="text-3xl font-bold text-indigo-700">${title}</h3>
-          <p class="text-xl mt-3">Class \( {cls} • \){subject} \( {term ? '• Term ' + term : ''} • \){dates}</p>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-8 mb-10">
-          <div>
-            <h4 class="text-xl font-bold text-indigo-700 mb-3">Learning Outcomes</h4>
-            <p class="bg-gray-50 p-4 rounded-lg border">${data.outcomes.replace(/\n/g,'<br>• ')}</p>
-          </div>
-          <div>
-            <h4 class="text-xl font-bold text-indigo-700 mb-3">Teaching Aids</h4>
-            <p class="bg-gray-50 p-4 rounded-lg border">${data.aids}</p>
-          </div>
-        </div>
-
-        <h4 class="text-2xl font-bold text-indigo-700 mb-4">Gist of the Lesson</h4>
-        <p class="bg-blue-50 p-6 rounded-xl text-lg leading-relaxed border-2 border-blue-200">${data.gist}</p>
-
-        <h4 class="text-2xl font-bold text-indigo-700 mt-10 mb-4">Classroom Activity</h4>
-        <p class="bg-green-50 p-6 rounded-xl text-lg leading-relaxed border-2 border-green-200">${data.activity}</p>
-
-        <h4 class="text-2xl font-bold text-indigo-700 mt-10 mb-4">Homework</h4>
-        <p class="bg-yellow-50 p-6 rounded-xl text-lg border-2 border-yellow-300">${data.homework}</p>
-
-        <h4 class="text-2xl font-bold text-indigo-700 mt-10 mb-4">Remedial Support</h4>
-        <p class="bg-purple-50 p-6 rounded-xl text-lg border-2 border-purple-300">${data.remedial}</p>
-
-        <p class="text-right text-sm italic mt-10 text-gray-600">
-          Generated from Official Samacheer Kalvi Textbook • Tamil Nadu State Board
-        </p>
-      `;
-
-      document.getElementById('result').classList.remove('hidden');
-      document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-
-      btn.textContent = 'Generate Lesson Plan Instantly';
-      btn.disabled = false;
-    };
-
-    function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      html2canvas(document.getElementById('content'), { scale: 2 }).then(canvas => {
-        const img = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const width = pdf.internal.pageSize.getWidth();
-        const height = (canvas.height * width) / canvas.width;
-        pdf.addImage(img, 'PNG', 10, 10, width - 20, height);
-        pdf.save('Lesson_Plan_TN_Board.pdf');
+      chapters.forEach((c, i) => {
+        const opt = document.createElement("option");
+        opt.value = c.index;
+        opt.textContent = `${i + 1}. ${c.title}`;
+        dropdown.appendChild(opt);
       });
+
+      document.getElementById("chapterBox").classList.remove("hidden");
+      setStatus("Chapters detected. Please select a chapter and click “Generate Lesson Plan”.");
+    } catch (err) {
+      console.error(err);
+      setStatus("");
+      alert("There was a problem reading this PDF. Please try another file.");
     }
-  </script>
+  });
+
+  /* ----------------------------------------------------------
+     STEP 6: Form submit → Build lesson plan
+  ----------------------------------------------------------- */
+  document.getElementById("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (!globalLines.length || !globalChapters.length) {
+      alert("Please upload a textbook and wait till chapters are detected.");
+      return;
+    }
+
+    const selectedIndex = parseInt(document.getElementById("chapterSelect").value, 10);
+    const dates = document.getElementById("dates").value || "";
+
+    const chapters = globalChapters;
+    const currentChapter = chapters.find(c => c.index === selectedIndex);
+    const nextChapter = chapters.find(c => c.index > selectedIndex);
+
+    const chapterText = extractChapterContent(
+      globalLines,
+      currentChapter.index,
+      nextChapter ? nextChapter.index : -1
+    );
+
+    document.getElementById("content").innerHTML =
+      buildLessonPlan(currentChapter.title, chapterText, dates);
+
+    document.getElementById("result").classList.remove("hidden");
+    document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+    setStatus("");
+  });
+
+  /* ----------------------------------------------------------
+     STEP 7: Download PDF of the generated lesson plan
+  ----------------------------------------------------------- */
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    html2canvas(document.getElementById("content"), { scale: 2 }).then(canvas => {
+      const pdf = new jsPDF("p", "mm", "a4");
+      const width = pdf.internal.pageSize.getWidth();
+      const height = (canvas.height * width) / canvas.width;
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
+      pdf.save("Lesson_Plan_From_Textbook.pdf");
+    });
+  }
+
+  // Expose for button
+  window.downloadPDF = downloadPDF;
+</script>
+
 </body>
-          </html>
+</html>
