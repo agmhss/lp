@@ -1,347 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TNSB Lesson Plan – From Uploaded Textbook (Tamil + English)</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fast Lesson Plan Generator – OCR Selected Pages</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
-  <!-- Tesseract.js for OCR (Tamil + English) -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<!-- Tesseract OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
-  <!-- jsPDF + html2canvas for PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- jsPDF + html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-  <style>
-    .hidden { display: none !important; }
-  </style>
+<style>
+  .hidden { display:none !important; }
+</style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-  <div class="max-w-4xl mx-auto">
 
-    <h1 class="text-4xl font-bold text-center text-indigo-800 mb-2">
-      Tamil Nadu State Board
-    </h1>
-    <h2 class="text-2xl text-center text-indigo-700 mb-6">
-      Lesson Plan Generator (Directly From Your Textbook)
-    </h2>
+<div class="max-w-4xl mx-auto">
 
-    <div class="bg-yellow-100 border border-yellow-400 rounded-xl p-4 mb-6 text-center">
-      <p class="text-base md:text-lg font-semibold text-yellow-800">
-        Upload TNSB textbook PDF → App reads it (Tamil + English) → You select chapter → Lesson plan is created from that chapter only.
-      </p>
-    </div>
+<h1 class="text-4xl font-bold text-center text-indigo-800 mb-2">
+  TNSB Lesson Plan Generator
+</h1>
+<h2 class="text-2xl text-center text-indigo-700 mb-8">
+  Fast OCR – Read Only Pages You Need
+</h2>
 
-    <!-- Status / Progress -->
-    <div id="status"
-         class="hidden mb-4 text-center text-sm md:text-base text-indigo-800 bg-indigo-100 border border-indigo-300 rounded-lg px-3 py-2">
-    </div>
 
-    <!-- FORM -->
-    <form id="form" class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
+<!-- Status Box -->
+<div id="statusBox" class="hidden bg-indigo-100 border border-indigo-400 text-indigo-800 p-4 rounded-lg text-center mb-6">
+  Processing...
+</div>
 
-      <!-- Upload PDF -->
-      <div>
-        <label class="block font-bold mb-2">Upload Textbook PDF</label>
-        <input type="file" id="pdfFile" accept="application/pdf"
-               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white" required />
-        <p class="text-xs text-gray-500 mt-1">
-          Use any TNSB textbook PDF (Tamil / English / Science / Social, etc.).
-        </p>
-      </div>
 
-      <!-- Chapter dropdown (auto-filled after reading PDF) -->
-      <div id="chapterBox" class="hidden">
-        <label class="block font-bold mb-2">Select Chapter / Lesson</label>
-        <select id="chapterSelect"
-                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white">
-        </select>
-        <p class="text-xs text-gray-500 mt-1">
-          These titles are auto-detected from the textbook (அலகு, பாடம், Unit, Lesson, Chapter...).
-        </p>
-      </div>
+<!-- Form -->
+<div class="bg-white rounded-2xl shadow-2xl p-8 space-y-8">
 
-      <!-- Week Dates -->
-      <div>
-        <label class="block font-bold mb-2">Week Dates</label>
-        <input id="dates" value="02/12/2025 - 06/12/2025"
-               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" />
-      </div>
-
-      <button type="submit"
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xl md:text-2xl py-4 md:py-5 rounded-xl shadow-xl">
-        Generate Lesson Plan
-      </button>
-    </form>
-
-    <!-- RESULT -->
-    <div id="result"
-         class="hidden mt-10 bg-white rounded-2xl shadow-2xl p-6 md:p-10 border-4 border-indigo-200">
-      <h2 class="text-2xl md:text-3xl font-bold text-center text-indigo-800 mb-6">
-        Lesson Plan
-      </h2>
-
-      <div id="content" class="text-base md:text-lg leading-relaxed"></div>
-
-      <div class="text-center mt-10">
-        <button onclick="downloadPDF()"
-                class="bg-red-600 hover:bg-red-700 text-white font-bold text-lg md:text-xl py-3 md:py-4 px-10 md:px-16 rounded-xl shadow-lg">
-          Download as PDF
-        </button>
-      </div>
-    </div>
-
+  <!-- Upload PDF -->
+  <div>
+    <label class="block font-bold mb-2">Upload Textbook PDF</label>
+    <input type="file" id="pdfFile" accept="application/pdf"
+           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg bg-white" />
   </div>
 
+  <!-- Page Range -->
+  <div class="grid grid-cols-2 gap-6">
+    <div>
+      <label class="block font-bold mb-2">From Page</label>
+      <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="e.g., 12">
+    </div>
+
+    <div>
+      <label class="block font-bold mb-2">To Page</label>
+      <input type="number" id="toPage" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg" placeholder="e.g., 18">
+    </div>
+  </div>
+
+  <button id="runOCR" 
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+    OCR Selected Pages
+  </button>
+
+</div>
+
+
+
+<!-- RESULT -->
+<div id="result" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-10 border-4 border-indigo-200">
+
+  <h2 class="text-3xl font-bold text-center text-indigo-800 mb-8">Lesson Plan</h2>
+
+  <div id="content" class="text-lg leading-relaxed"></div>
+
+  <div class="text-center mt-12">
+    <button onclick="downloadPDF()"
+      class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
+      Download as PDF
+    </button>
+  </div>
+</div>
+
+</div>
+
+
+
 <script>
-  // Needed for pdf.js worker
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+/* -------------------------------------------------------------
+   Show / Hide Status
+------------------------------------------------------------- */
+function setStatus(msg) {
+  const box = document.getElementById("statusBox");
+  if (!msg) {
+    box.classList.add("hidden");
+    box.textContent = "";
+  } else {
+    box.classList.remove("hidden");
+    box.textContent = msg;
+  }
+}
+
+
+/* -------------------------------------------------------------
+   FAST OCR: Only Selected Pages
+------------------------------------------------------------- */
+async function ocrSelectedPages(file, start, end) {
+  const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+  let finalText = "";
+
+  for (let p = start; p <= end; p++) {
+    setStatus(`Reading page ${p} of ${end}...`);
+
+    const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: 1.6 });
+
+    // Render page into a canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({
+      canvasContext: canvas.getContext("2d"),
+      viewport
+    }).promise;
+
+    // OCR the page (Tamil + English)
+    const result = await Tesseract.recognize(canvas, 'tam+eng');
+    finalText += "\n" + result.data.text;
   }
 
-  const statusEl = document.getElementById("status");
+  setStatus("");
+  return finalText;
+}
 
-  function setStatus(msg) {
-    if (!msg) {
-      statusEl.classList.add("hidden");
-      statusEl.textContent = "";
-    } else {
-      statusEl.classList.remove("hidden");
-      statusEl.textContent = msg;
-    }
-  }
 
-  /* ----------------------------------------------------------
-     STEP 1: OCR the entire PDF – Tamil + English
-     (Uses Tesseract.js on each page rendered with pdf.js)
-  ----------------------------------------------------------- */
-  async function ocrFullPDF(file) {
-    const pdf = await pdfjsLib.getDocument({ url: URL.createObjectURL(file) }).promise;
-    let fullText = "";
+/* -------------------------------------------------------------
+   Convert OCR text → Lesson Plan (Simple but clean)
+------------------------------------------------------------- */
+function makeLessonPlan(text) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
 
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      setStatus(`Reading textbook… page ${pageNum} of ${pdf.numPages}`);
+  return `
+    <h3 class="text-2xl font-bold text-indigo-700 mb-4">Extracted Text (OCR)</h3>
+    <p class="bg-blue-50 p-4 rounded-lg border mb-6">${cleaned}</p>
 
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1.5 });
+    <h3 class="text-xl font-bold text-indigo-700">Learning Outcomes</h3>
+    <p class="bg-gray-50 p-4 rounded-lg border mb-6">
+      • Understand main concepts from the textbook pages.<br>
+      • Recall definitions, facts and explanations.<br>
+      • Improve reading comprehension using authentic lesson text.<br>
+      • Apply the ideas in class discussions and activities.
+    </p>
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+    <h3 class="text-xl font-bold text-indigo-700">Activity</h3>
+    <p class="bg-green-50 p-4 rounded-lg border mb-6">
+      Read the OCR text. Ask oral questions. Students explain meaning in their own words.
+    </p>
 
-      await page.render({ canvasContext: ctx, viewport }).promise;
+    <h3 class="text-xl font-bold text-indigo-700">Homework</h3>
+    <p class="bg-yellow-50 p-4 rounded-lg border mb-6">
+      Write notes from the extracted text & answer all in-text questions from the textbook.
+    </p>
 
-      // OCR using Tamil + English
-      const result = await Tesseract.recognize(canvas, "tam+eng");
-      fullText += "\n" + result.data.text;
-    }
+    <h3 class="text-xl font-bold text-indigo-700">Remedial</h3>
+    <p class="bg-purple-50 p-4 rounded-lg border mb-6">
+      Provide simplified explanations of the important sentences extracted through OCR.
+    </p>
+  `;
+}
 
-    setStatus("Finished reading textbook. Chapters are being detected…");
-    return fullText;
-  }
 
-  /* ----------------------------------------------------------
-     STEP 2: Detect Chapters in Tamil + English
-     Looks for:
-       - Lesson / Unit / Chapter patterns (English)
-       - "அலகு" / "பாடம்" with Tamil or Arabic digits
-       - Simple fallback patterns
-  ----------------------------------------------------------- */
-  function detectChapters(text) {
-    const rawLines = text.split("\n");
-    const lines = rawLines.map(l => l.trim()).filter(l => l.length > 0);
+/* -------------------------------------------------------------
+   Handle OCR Button Click
+------------------------------------------------------------- */
+document.getElementById("runOCR").addEventListener("click", async () => {
+  const file = document.getElementById("pdfFile").files[0];
+  const fromPage = parseInt(document.getElementById("fromPage").value);
+  const toPage = parseInt(document.getElementById("toPage").value);
 
-    const chapters = [];
+  if (!file) return alert("Please upload textbook PDF");
+  if (!fromPage || !toPage) return alert("Enter valid page range");
+  if (fromPage > toPage) return alert("From Page must be ≤ To Page");
 
-    const tamilDigitPattern = /[0-9௦-௯]+/;
-    const patterns = [
-      /(Lesson|Unit|Chapter)\s*\d+/i,
-      /(அலகு|பாடம்)\s*[0-9௦-௯]+/,
-      /^(அலகு|பாடம்)\s*[-–—]?\s*.+/,   // e.g. "அலகு 1 – எங்கள் சூழல்"
-      /^[IVXLC]+\.\s+.+/                // Roman numbered headings
-    ];
+  setStatus("Starting OCR... Please wait");
 
-    lines.forEach((line, idx) => {
-      const hasTamil = /[\u0B80-\u0BFF]/.test(line);
+  const text = await ocrSelectedPages(file, fromPage, toPage);
 
-      let isHeading = false;
-      for (const p of patterns) {
-        if (p.test(line)) {
-          isHeading = true;
-          break;
-        }
-      }
+  document.getElementById("content").innerHTML = makeLessonPlan(text);
+  document.getElementById("result").classList.remove("hidden");
+  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
 
-      // Extra heuristic: Tamil big line with digits may be a heading
-      if (!isHeading && hasTamil && tamilDigitPattern.test(line) && line.length < 60) {
-        isHeading = true;
-      }
+  setStatus("");
+});
 
-      if (isHeading) {
-        chapters.push({ title: line, index: idx });
-      }
-    });
 
-    return { lines, chapters };
-  }
+/* -------------------------------------------------------------
+   Download PDF
+------------------------------------------------------------- */
+function downloadPDF() {
+  const { jsPDF } = window.jspdf;
 
-  /* ----------------------------------------------------------
-     STEP 3: Extract only selected chapter text
-  ----------------------------------------------------------- */
-  function extractChapterContent(lines, startIndex, nextIndex) {
-    const start = startIndex;
-    const end = nextIndex > 0 ? nextIndex : start + 60; // approx 60 lines fallback
-    return lines.slice(start, end).join(" ");
-  }
+  html2canvas(document.getElementById("content"), { scale: 2 }).then(canvas => {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const width = pdf.internal.pageSize.getWidth();
+    const height = (canvas.height * width) / canvas.width;
 
-  /* ----------------------------------------------------------
-     STEP 4: Build Lesson Plan HTML from extracted chapter text
-  ----------------------------------------------------------- */
-  function buildLessonPlan(title, chapterText, dates) {
-    const safeText = chapterText.replace(/\s+/g, " ").trim();
-
-    return `
-      <div class="mb-6 border-b-4 border-indigo-600 pb-4 text-center">
-        <h3 class="text-2xl md:text-3xl font-bold text-indigo-700 mb-2">${title}</h3>
-        <p class="text-base md:text-lg"><b>Week:</b> ${dates}</p>
-      </div>
-
-      <h4 class="text-xl font-bold text-indigo-700 mb-2">Text from Textbook</h4>
-      <p class="bg-blue-50 p-4 rounded-lg border mb-6">
-        ${safeText || "Text could not be clearly extracted from this chapter."}
-      </p>
-
-      <h4 class="text-xl font-bold text-indigo-700 mb-2">Learning Outcomes</h4>
-      <p class="bg-gray-50 p-4 rounded-lg border mb-6">
-        • Understand the ideas explained in this chapter from the textbook.<br>
-        • Recall key facts, definitions, and examples as given.<br>
-        • Answer questions based only on the textbook content.<br>
-        • Improve reading and understanding of the original lesson.
-      </p>
-
-      <h4 class="text-xl font-bold text-indigo-700 mb-2">Classroom Activity</h4>
-      <p class="bg-green-50 p-4 rounded-lg border mb-6">
-        Read the extracted part of the lesson together with students.<br>
-        Ask oral and written questions directly from this text.
-      </p>
-
-      <h4 class="text-xl font-bold text-indigo-700 mb-2">Homework</h4>
-      <p class="bg-yellow-50 p-4 rounded-lg border mb-6">
-        Instruct students to read this chapter section at home and answer the in-text and end-of-lesson questions from the textbook.
-      </p>
-
-      <h4 class="text-xl font-bold text-indigo-700 mb-2">Remedial Support</h4>
-      <p class="bg-purple-50 p-4 rounded-lg border mb-2">
-        For slow learners, re-read important sentences from the extracted text and explain using simple language and examples.
-      </p>
-    `;
-  }
-
-  /* ----------------------------------------------------------
-     STEP 5: Handle PDF upload → OCR → auto chapter detection
-  ----------------------------------------------------------- */
-  let globalLines = [];
-  let globalChapters = [];
-
-  document.getElementById("pdfFile").addEventListener("change", async function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    setStatus("Starting to read the textbook… This may take some time depending on pages.");
-    document.getElementById("chapterBox").classList.add("hidden");
-    globalLines = [];
-    globalChapters = [];
-
-    try {
-      const text = await ocrFullPDF(file);
-      setStatus("Detecting chapters from the textbook…");
-
-      const { lines, chapters } = detectChapters(text);
-      globalLines = lines;
-      globalChapters = chapters;
-
-      const dropdown = document.getElementById("chapterSelect");
-      dropdown.innerHTML = "";
-
-      if (!chapters.length) {
-        setStatus("");
-        alert("No clear chapter headings could be detected. You may need a clearer textbook PDF.");
-        return;
-      }
-
-      chapters.forEach((c, i) => {
-        const opt = document.createElement("option");
-        opt.value = c.index;
-        opt.textContent = `${i + 1}. ${c.title}`;
-        dropdown.appendChild(opt);
-      });
-
-      document.getElementById("chapterBox").classList.remove("hidden");
-      setStatus("Chapters detected. Please select a chapter and click “Generate Lesson Plan”.");
-    } catch (err) {
-      console.error(err);
-      setStatus("");
-      alert("There was a problem reading this PDF. Please try another file.");
-    }
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
+    pdf.save("LessonPlan_SelectedPages.pdf");
   });
+}
 
-  /* ----------------------------------------------------------
-     STEP 6: Form submit → Build lesson plan
-  ----------------------------------------------------------- */
-  document.getElementById("form").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    if (!globalLines.length || !globalChapters.length) {
-      alert("Please upload a textbook and wait till chapters are detected.");
-      return;
-    }
-
-    const selectedIndex = parseInt(document.getElementById("chapterSelect").value, 10);
-    const dates = document.getElementById("dates").value || "";
-
-    const chapters = globalChapters;
-    const currentChapter = chapters.find(c => c.index === selectedIndex);
-    const nextChapter = chapters.find(c => c.index > selectedIndex);
-
-    const chapterText = extractChapterContent(
-      globalLines,
-      currentChapter.index,
-      nextChapter ? nextChapter.index : -1
-    );
-
-    document.getElementById("content").innerHTML =
-      buildLessonPlan(currentChapter.title, chapterText, dates);
-
-    document.getElementById("result").classList.remove("hidden");
-    document.getElementById("result").scrollIntoView({ behavior: "smooth" });
-    setStatus("");
-  });
-
-  /* ----------------------------------------------------------
-     STEP 7: Download PDF of the generated lesson plan
-  ----------------------------------------------------------- */
-  function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    html2canvas(document.getElementById("content"), { scale: 2 }).then(canvas => {
-      const pdf = new jsPDF("p", "mm", "a4");
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (canvas.height * width) / canvas.width;
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height);
-      pdf.save("Lesson_Plan_From_Textbook.pdf");
-    });
-  }
-
-  // Expose for button
-  window.downloadPDF = downloadPDF;
 </script>
 
 </body>
