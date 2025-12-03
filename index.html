@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <!-- Transformers.js -->
 <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.9.0/dist/transformers.min.js"></script>
 
@@ -241,15 +241,86 @@ document.getElementById("generatePlan").addEventListener("click", async () => {
     result.scrollIntoView({ behavior: "smooth" });
 });
 
-function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    html2canvas(content, { scale: 2 }).then(canvas => {
+async function downloadPDF() {
+    const btn = document.getElementById('pdfDownloadBtn');
+    const element = document.getElementById('lessonPlanContent');
+    
+    // Temporarily show button again if needed (optional)
+    btn.disabled = true;
+    btn.textContent = 'Generating PDF...';
+
+    try {
+        // Force full render: scroll to top and allow reflow
+        window.scrollTo(0, 0);
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const scale = window.devicePixelRatio >= 2 ? 2 : 2; // Good quality even on retina
+        const canvas = await html2canvas(element, {
+            scale: scale,
+            useCORS: true,                  // Important if you have external images/fonts
+            allowTaint: false,
+            backgroundColor: '#ffffff',
+            scrollY: -window.scrollY,       // Critical for full capture
+            scrollX: 0,
+            windowWidth: document.documentElement.offsetWidth,
+            height: element.scrollHeight,   // Force full height
+            width: element.scrollWidth,
+            logging: false                  // Set true only for debugging
+        });
+
+        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
-        const w = pdf.internal.pageSize.getWidth();
-        const h = (canvas.height * w) / canvas.width;
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, w, h);
-        pdf.save("LessonPlanAI.html");
-    });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const margin = 10; // mm
+        const usableWidth = pageWidth - 2 * margin;
+        const usableHeight = pageHeight - 2 * margin;
+
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+
+        // Calculate ratio to fit width (we scale proportionally)
+        const ratio = usableWidth / imgWidth;
+        let heightInMM = imgHeight * ratio;
+
+        let position = 0;
+#lessonPlanContent {
+    background: white;
+    overflow-x: hidden; /* Prevents horizontal scroll during capture */
+}
+
+#lessonPlanContent table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+        // Add first page
+        pdf.addImage(imgData, 'PNG', margin, margin, usableWidth, heightInMM);
+
+        // Add additional pages if content is longer than one A4 page
+        while (heightInMM >= usableHeight) {
+            pdf.addPage();
+            position -= pageHeight; // Move up by one full page
+            pdf.addImage(imgData, 'PNG', margin, position + margin, usableWidth, imgHeight * ratio);
+            heightInMM -= usableHeight;
+        }
+
+        // Generate safe filename
+        const title = (document.getElementById('title')?.value || 'Lesson_Plan')
+            .trim()
+            .replace(/[^a-zA-Z0-9\-_ ]/g, '')
+            .replace(/\s+/g, '_');
+
+        pdf.save(`${title}_LessonPlan.pdf`);
+
+    } catch (error) {
+        console.error("PDF generation failed:", error);
+        alert("Failed to generate PDF. Please try again.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Download PDF'; // or whatever your original text was
+    }
 }
 
 </script>
