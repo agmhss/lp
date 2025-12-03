@@ -1,240 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TNSB Lesson Plan Generator – AI + OCR</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TNSB Lesson Plan Generator – AI + OCR</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.9.0/dist/transformers.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.9.0/dist/transformers.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <style>
-        .hidden {
-            display: none !important;
-        }
-    </style>
+<style>
+.hidden { display: none !important; }
+</style>
 </head>
-
 
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
 
-    <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-center text-indigo-800 mb-1">Tamil Nadu State Board</h1>
-        <h2 class="text-2xl text-center text-indigo-700 mb-6">Lesson Plan Generator (OCR + AI)</h2>
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold text-center text-indigo-800 mb-1">Tamil Nadu State Board</h1>
+    <h2 class="text-2xl text-center text-indigo-700 mb-6">Lesson Plan Generator (OCR + AI)</h2>
 
-        <div id="statusBox"
-            class="hidden bg-indigo-100 border border-indigo-400 text-indigo-800 p-4 rounded-lg text-center mb-6">
-            Processing...
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-8">
-
-            <!-- Upload -->
-            <div>
-                <label class="block font-bold mb-2 text-lg">Upload Textbook PDF</label>
-                <input type="file" id="pdfFile" accept="application/pdf"
-                    class="w-full px-4 py-3 border-2 rounded-lg bg-white" />
-            </div>
-
-            <!-- Page Range -->
-            <div id="pageInputs" class="hidden grid grid-cols-2 gap-6">
-                <div>
-                    <label class="block font-bold mb-2">From Page</label>
-                    <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 rounded-lg" />
-                </div>
-                <div>
-                    <label class="block font-bold mb-2">To Page</label>
-                    <input type="number" id="toPage" class="w-full px-4 py-3 border-2 rounded-lg" />
-                </div>
-            </div>
-
-            <button id="runOCR"
-                class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
-                OCR Selected Pages & Auto-Fill Form
-            </button>
-
-            <!-- Form Section -->
-            <div id="formSection" class="hidden space-y-8">
-
-                <div class="grid md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block font-bold mb-2">Subject</label>
-                        <input id="subjectInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="English" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Class</label>
-                        <input id="cls" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="10" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Section</label>
-                        <input id="sectionInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="A" />
-                    </div>
-                </div>
-
-                <div class="grid md:grid-cols-3 gap-6">
-                    <div>
-                        <label class="block font-bold mb-2">Unit</label>
-                        <input id="unitInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Unit 3" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Lesson Title</label>
-                        <input id="lessonTitle" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Heat" />
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-2">Author</label>
-                        <input id="lessonAuthor" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Author" />
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-2">Week / Dates</label>
-                    <input id="dates" value="02/12/2025 - 06/12/2025"
-                        class="w-full px-4 py-3 border-2 rounded-lg" />
-                </div>
-
-                <button id="generatePlan"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
-                    Generate Lesson Plan (AI)
-                </button>
-
-            </div>
-        </div>
-
-        <!-- RESULT OUTPUT -->
-        <div id="result" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-10 border-4 border-indigo-200">
-            <h2 class="text-3xl font-bold text-center text-indigo-800 mb-6">Lesson Plan</h2>
-
-            <div id="content" class="text-lg leading-relaxed"></div>
-
-            <div class="text-center mt-12">
-                <button onclick="downloadPDF()"
-                    class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
-                    Download PDF
-                </button>
-            </div>
-        </div>
-
+    <div id="statusBox" class="hidden bg-indigo-100 border border-indigo-400 text-indigo-800 p-4 rounded-lg text-center mb-6">
+        Processing...
     </div>
 
+    <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-8">
+
+        <div>
+            <label class="block font-bold mb-2 text-lg">Upload Textbook PDF</label>
+            <input type="file" id="pdfFile" accept="application/pdf" class="w-full px-4 py-3 border-2 rounded-lg bg-white" />
+        </div>
+
+        <div id="pageInputs" class="hidden grid grid-cols-2 gap-6">
+            <div>
+                <label class="block font-bold mb-2">From Page</label>
+                <input type="number" id="fromPage" class="w-full px-4 py-3 border-2 rounded-lg" />
+            </div>
+            <div>
+                <label class="block font-bold mb-2">To Page</label>
+                <input type="number" id="toPage" class="w-full px-4 py-3 border-2 rounded-lg" />
+            </div>
+        </div>
+
+        <button id="runOCR"
+            class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+            OCR Selected Pages & Auto-Fill Form
+        </button>
+
+        <div id="formSection" class="hidden space-y-8">
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block font-bold mb-2">Subject</label>
+                    <input id="subjectInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="English" />
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Class</label>
+                    <input id="cls" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="10" />
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Section</label>
+                    <input id="sectionInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="A" />
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block font-bold mb-2">Unit</label>
+                    <input id="unitInput" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Unit 3" />
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Lesson Title</label>
+                    <input id="lessonTitle" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Heat" />
+                </div>
+                <div>
+                    <label class="block font-bold mb-2">Author</label>
+                    <input id="lessonAuthor" class="w-full px-4 py-3 border-2 rounded-lg" placeholder="Author" />
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold mb-2">Week / Dates</label>
+                <input id="dates" value="02/12/2025 - 06/12/2025"
+                    class="w-full px-4 py-3 border-2 rounded-lg" />
+            </div>
+
+            <button id="generatePlan"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-4 rounded-xl shadow-lg">
+                Generate Lesson Plan (AI)
+            </button>
+
+        </div>
+    </div>
+
+    <div id="result" class="hidden mt-12 bg-white rounded-2xl shadow-2xl p-10 border-4 border-indigo-200">
+        <h2 class="text-3xl font-bold text-center text-indigo-800 mb-6">Lesson Plan</h2>
+        <div id="content" class="text-lg leading-relaxed"></div>
+
+        <div class="text-center mt-12">
+            <button onclick="downloadPDF()"
+                class="bg-red-600 hover:bg-red-700 text-white font-bold text-xl py-4 px-16 rounded-xl shadow-lg">
+                Download PDF
+            </button>
+        </div>
+    </div>
+
+</div>
 
 
+<script>
+let summarizer = null;
+let ocrText = "";
 
-    <script>
-        //--------------------------------------------------------
-        // SIMPLE ELEMENT GETTERS
-        //--------------------------------------------------------
+// Load summarizer model
+async function loadModel() {
+    if (!summarizer) {
+        summarizer = await window.transformers.pipeline("summarization", "Xenova/t5-small");
+    }
+}
 
-        const pageInputs = document.getElementById("pageInputs");
-        const runOCR = document.getElementById("runOCR");
-        const formSection = document.getElementById("formSection");
-        const content = document.getElementById("content");
-        const result = document.getElementById("result");
+function setStatus(msg) {
+    const box = document.getElementById("statusBox");
+    if (!msg) box.classList.add("hidden");
+    else {
+        box.classList.remove("hidden");
+        box.textContent = msg;
+    }
+}
 
-        let summarizer = null;
-        let ocrText = "";
+document.getElementById("pdfFile").addEventListener("change", () => {
+    pageInputs.classList.remove("hidden");
+    runOCR.classList.remove("hidden");
+});
 
+// OCR Function
+async function ocrSelectedPages(file, start, end) {
+    const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
+    let text = "";
 
-        //--------------------------------------------------------
-        // LOAD AI MODEL
-        //--------------------------------------------------------
-        async function loadModel() {
-            if (!summarizer) {
-                summarizer = await window.transformers.pipeline("summarization", "Xenova/t5-small");
-            }
-        }
+    for (let p = start; p <= end; p++) {
+        setStatus("Reading Page " + p + " ...");
 
-        function setStatus(msg) {
-            const box = document.getElementById("statusBox");
-            if (!msg) box.classList.add("hidden");
-            else {
-                box.classList.remove("hidden");
-                box.textContent = msg;
-            }
-        }
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({ scale: 1.6 });
 
-        //--------------------------------------------------------
-        // PDF Upload → Show Page Inputs
-        //--------------------------------------------------------
-        document.getElementById("pdfFile").addEventListener("change", () => {
-            pageInputs.classList.remove("hidden");
-            runOCR.classList.remove("hidden");
-        });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
-        //--------------------------------------------------------
-        // OCR FUNCTION
-        //--------------------------------------------------------
-        async function ocrSelectedPages(file, start, end) {
-            const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
-            let text = "";
+        const result = await Tesseract.recognize(canvas, "tam+eng");
+        text += result.data.text + " ";
+    }
 
-            for (let p = start; p <= end; p++) {
-                setStatus("Reading Page " + p + " ...");
+    setStatus("");
+    return text;
+}
 
-                const page = await pdf.getPage(p);
-                const viewport = page.getViewport({ scale: 1.6 });
+// OCR button click
+runOCR.addEventListener("click", async () => {
+    const file = pdfFile.files[0];
+    const fp = parseInt(fromPage.value);
+    const tp = parseInt(toPage.value);
 
-                const canvas = document.createElement("canvas");
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
+    if (!file || !fp || !tp) return alert("Upload PDF and enter page numbers.");
 
-                await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    ocrText = await ocrSelectedPages(file, fp, tp);
 
-                const result = await Tesseract.recognize(canvas, "tam+eng");
-                text += result.data.text + " ";
-            }
+    formSection.classList.remove("hidden");
+    formSection.scrollIntoView({ behavior: "smooth" });
+});
 
-            setStatus("");
-            return text;
-        }
+// Generate Lesson Plan
+async function buildLessonPlanAI() {
+    await loadModel();
 
+    setStatus("AI summarizing lesson...");
+    const summary = await summarizer(ocrText, { max_length: 120, min_length: 40 });
+    const gist = summary[0].summary_text;
+    setStatus("");
 
-        //--------------------------------------------------------
-        // RUN OCR BUTTON CLICK
-        //--------------------------------------------------------
-        runOCR.addEventListener("click", async () => {
-            const file = pdfFile.files[0];
-            const fp = parseInt(fromPage.value);
-            const tp = parseInt(toPage.value);
-
-            if (!file || !fp || !tp) return alert("Upload PDF and enter page numbers.");
-
-            ocrText = await ocrSelectedPages(file, fp, tp);
-
-            formSection.classList.remove("hidden");
-            formSection.scrollIntoView({ behavior: "smooth" });
-        });
-
-
-
-        //--------------------------------------------------------
-        // BUILD LESSON PLAN
-        //--------------------------------------------------------
-        async function buildLessonPlanAI() {
-
-            await loadModel();
-
-            setStatus("AI summarizing lesson...");
-
-            const summary = await summarizer(ocrText, {
-                max_length: 120,
-                min_length: 50
-            });
-
-            const gist = summary[0].summary_text;
-
-            setStatus("");
-
-            //--------------------------
-            // FINAL LESSON PLAN TEMPLATE
-            //--------------------------
-
-            return `
+    return `
 <h3 class='font-bold text-indigo-700 text-xl'>1. Subject, Class, Section, Dates</h3>
 <b>Subject:</b> ${subjectInput.value}<br>
 <b>Class:</b> ${cls.value}<br>
@@ -247,70 +197,53 @@
 <b>Author:</b> ${lessonAuthor.value}<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>3. Nature & Format</h3>
-Stand-alone / Building Block — As per teacher requirement.<br><br>
+Stand-alone / Building-block lesson.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>4. Learning Outcomes</h3>
-Students will be able to understand and apply the core concepts of the lesson.<br><br>
+Students understand, explain and apply the lesson concepts.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>5. Methodology</h3>
-Interactive, Explanatory, Demonstrative.<br><br>
+Interactive teaching, demonstration, questioning, peer discussion.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>6. Teaching Aids</h3>
-Textbook, Board, Chart, ICT resources.<br><br>
+Textbook, board, charts, ICT resources.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>7. Gist of the Lesson</h3>
 ${gist}<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>8. Activities</h3>
-Pair work, Brainstorming, Writing tasks.<br><br>
+Brainstorming, pair-work, speaking tasks, short writing tasks.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>9. Weekend Activity</h3>
-Students prepare a small report / task based on the lesson.<br><br>
+Students complete a small project or write a reflection.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>10. Remedial Action</h3>
-Provide revision worksheets & extra practice for slow learners.<br><br>
+Extra practice sheets, peer tutoring, simplified explanation.<br><br>
 `;
-        }
+}
 
+// Generate Button
+document.getElementById("generatePlan").addEventListener("click", async () => {
+    const output = await buildLessonPlanAI();
+    content.innerHTML = output;
+    result.classList.remove("hidden");
+    result.scrollIntoView({ behavior: "smooth" });
+});
 
+// PDF Download
+async function downloadPDF() {
+    const element = document.getElementById("content");
+    const canvas = await html2canvas(element, { scale: 2 });
+    const img = canvas.toDataURL("image/png");
 
-        //--------------------------------------------------------
-        // GENERATE BUTTON CLICK
-        //--------------------------------------------------------
-        document.getElementById("generatePlan").addEventListener("click", async () => {
+    const pdf = new jsPDF("p", "mm", "a4");
+    const width = pdf.internal.pageSize.getWidth() - 20;
+    const height = (canvas.height * width) / canvas.width;
 
-            const output = await buildLessonPlanAI();
+    pdf.addImage(img, "PNG", 10, 10, width, height);
+    pdf.save("LessonPlan.pdf");
+}
 
-            content.innerHTML = output;
-
-            result.classList.remove("hidden");
-            result.scrollIntoView({ behavior: "smooth" });
-        });
-
-
-
-        //--------------------------------------------------------
-        // DOWNLOAD PDF
-        //--------------------------------------------------------
-        async function downloadPDF() {
-
-            const element = document.getElementById("content");
-
-            const canvas = await html2canvas(element, { scale: 2 });
-
-            const img = canvas.toDataURL("image/png");
-
-            const pdf = new jsPDF("p", "mm", "a4");
-
-            const width = pdf.internal.pageSize.getWidth() - 20;
-            const height = (canvas.height * width) / canvas.width;
-
-            pdf.addImage(img, "PNG", 10, 10, width, height);
-            pdf.save("LessonPlan.pdf");
-        }
-
-    </script>
-
+</script>
 </body>
-
 </html>
