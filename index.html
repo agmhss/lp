@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TNSB Lesson Plan Generator – AI + OCR</title>
+<title>TNSB Lesson Plan Generator</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -115,44 +115,95 @@
 let summarizer = null;
 let ocrText = "";
 
-// Load summarizer model
+// ELEMENT SHORTCUTS
+const statusBox = document.getElementById("statusBox");
+const pageInputs = document.getElementById("pageInputs");
+const runOCR = document.getElementById("runOCR");
+const formSection = document.getElementById("formSection");
+const content = document.getElementById("content");
+const result = document.getElementById("result");
+
+// AUTO-FILL DEFAULT VALUES
+document.getElementById("subjectInput").value = "English";
+document.getElementById("cls").value = "10";
+document.getElementById("sectionInput").value = "A";
+document.getElementById("unitInput").value = "Unit 3";
+document.getElementById("lessonTitle").value = "Heat";
+document.getElementById("lessonAuthor").value = "Textbook Author";
+
+// DATE AUTO-FILL TODAYS WEEK
+document.getElementById("dates").value =
+    new Date().toLocaleDateString() + " - " +
+    new Date(Date.now() + 4 * 86400000).toLocaleDateString();
+
+
+//--------------------------------------------
+// AI MODEL LOADER
+//--------------------------------------------
 async function loadModel() {
     if (!summarizer) {
+        setStatus("Loading AI model…");
         summarizer = await window.transformers.pipeline("summarization", "Xenova/t5-small");
+        setStatus("");
     }
 }
 
-function setStatus(msg) {
-    const box = document.getElementById("statusBox");
-    if (!msg) box.classList.add("hidden");
-    else {
-        box.classList.remove("hidden");
-        box.textContent = msg;
+//--------------------------------------------
+// STATUS DISPLAY + THINKING COUNTDOWN
+//--------------------------------------------
+let countdownInterval = null;
+
+function setStatus(msg, seconds = 0) {
+    clearInterval(countdownInterval);
+
+    if (!msg) {
+        statusBox.classList.add("hidden");
+        return;
+    }
+
+    statusBox.classList.remove("hidden");
+    statusBox.textContent = msg;
+
+    if (seconds > 0) {
+        let remaining = seconds;
+        statusBox.textContent = `${msg} (${remaining}s)`;
+
+        countdownInterval = setInterval(() => {
+            remaining--;
+            statusBox.textContent = `${msg} (${remaining}s)`;
+
+            if (remaining <= 0) clearInterval(countdownInterval);
+        }, 1000);
     }
 }
 
+
+//--------------------------------------------
+// PDF SELECTED → SHOW PAGE INPUTS
+//--------------------------------------------
 document.getElementById("pdfFile").addEventListener("change", () => {
     pageInputs.classList.remove("hidden");
     runOCR.classList.remove("hidden");
 });
 
-// OCR Function
+
+//--------------------------------------------
+// OCR PROCESS
+//--------------------------------------------
 async function ocrSelectedPages(file, start, end) {
     const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file)).promise;
     let text = "";
 
     for (let p = start; p <= end; p++) {
-        setStatus("Reading Page " + p + " ...");
-
+        setStatus("Reading page " + p + " …", 3);
         const page = await pdf.getPage(p);
-        const viewport = page.getViewport({ scale: 1.6 });
+        const vp = page.getViewport({ scale: 1.6 });
 
         const canvas = document.createElement("canvas");
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = vp.width;
+        canvas.height = vp.height;
 
-        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
-
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
         const result = await Tesseract.recognize(canvas, "tam+eng");
         text += result.data.text + " ";
     }
@@ -161,28 +212,41 @@ async function ocrSelectedPages(file, start, end) {
     return text;
 }
 
-// OCR button click
+
+//--------------------------------------------
+// OCR BUTTON
+//--------------------------------------------
 runOCR.addEventListener("click", async () => {
-    const file = pdfFile.files[0];
-    const fp = parseInt(fromPage.value);
-    const tp = parseInt(toPage.value);
+    let file = pdfFile.files[0];
+    let fp = parseInt(fromPage.value);
+    let tp = parseInt(toPage.value);
 
-    if (!file || !fp || !tp) return alert("Upload PDF and enter page numbers.");
+    if (!file || !fp || !tp) return alert("Please enter pages!");
 
+    setStatus("Extracting text using OCR…", 12);
     ocrText = await ocrSelectedPages(file, fp, tp);
 
     formSection.classList.remove("hidden");
     formSection.scrollIntoView({ behavior: "smooth" });
 });
 
-// Generate Lesson Plan
+
+//--------------------------------------------
+// LESSON PLAN GENERATOR
+//--------------------------------------------
 async function buildLessonPlanAI() {
     await loadModel();
 
-    setStatus("AI summarizing lesson...");
-    const summary = await summarizer(ocrText, { max_length: 120, min_length: 40 });
-    const gist = summary[0].summary_text;
-    setStatus("");
+    setStatus("Thinking… Summarizing lesson", 10);
+
+    const summary = await summarizer(ocrText || "This is placeholder text.", {
+        max_length: 120,
+        min_length: 50
+    });
+
+    let gist = summary[0].summary_text || "Lesson summary unavailable.";
+
+    setStatus("Preparing Lesson Plan…", 5);
 
     return `
 <h3 class='font-bold text-indigo-700 text-xl'>1. Subject, Class, Section, Dates</h3>
@@ -197,40 +261,53 @@ async function buildLessonPlanAI() {
 <b>Author:</b> ${lessonAuthor.value}<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>3. Nature & Format</h3>
-Stand-alone / Building-block lesson.<br><br>
+Stand-alone / Building-Block Lesson.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>4. Learning Outcomes</h3>
-Students understand, explain and apply the lesson concepts.<br><br>
+Students will understand, explain and apply the core concepts of the lesson.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>5. Methodology</h3>
-Interactive teaching, demonstration, questioning, peer discussion.<br><br>
+Interactive teaching, demonstration, questioning, peer activity.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>6. Teaching Aids</h3>
-Textbook, board, charts, ICT resources.<br><br>
+Textbook, board, charts, ICT tools.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>7. Gist of the Lesson</h3>
 ${gist}<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>8. Activities</h3>
-Brainstorming, pair-work, speaking tasks, short writing tasks.<br><br>
+Listening, Speaking, Pair-Work, Brainstorming, Writing Tasks.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>9. Weekend Activity</h3>
-Students complete a small project or write a reflection.<br><br>
+Students complete a short report or activity based on the lesson.<br><br>
 
 <h3 class='font-bold text-indigo-700 text-xl'>10. Remedial Action</h3>
-Extra practice sheets, peer tutoring, simplified explanation.<br><br>
+Provide practice worksheets and simpler explanations for slow learners.<br><br>
 `;
 }
 
-// Generate Button
+
+//--------------------------------------------
+// GENERATE BUTTON CLICK
+//--------------------------------------------
 document.getElementById("generatePlan").addEventListener("click", async () => {
+
+    setStatus("Thinking… Preparing Final Output", 8);
+
     const output = await buildLessonPlanAI();
+
     content.innerHTML = output;
     result.classList.remove("hidden");
+
     result.scrollIntoView({ behavior: "smooth" });
+
+    setStatus("");
 });
 
-// PDF Download
+
+//--------------------------------------------
+// PDF DOWNLOAD
+//--------------------------------------------
 async function downloadPDF() {
     const element = document.getElementById("content");
     const canvas = await html2canvas(element, { scale: 2 });
@@ -243,7 +320,6 @@ async function downloadPDF() {
     pdf.addImage(img, "PNG", 10, 10, width, height);
     pdf.save("LessonPlan.pdf");
 }
-
 </script>
 </body>
 </html>
