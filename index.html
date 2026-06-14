@@ -46,16 +46,15 @@
                 <h3 class="font-bold text-gray-800 mb-2">1. API Configuration</h3>
                 
                 <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-4 text-xs text-indigo-900">
-                    <p class="font-bold mb-1 flex items-center gap-1">🔑 Need an API Key?</p>
+                    <p class="font-bold mb-1 flex items-center gap-1">⚡ Using Groq for Ultra-Fast AI</p>
                     <ol class="list-decimal ml-4 space-y-1 mt-1 text-indigo-800">
-                        <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 font-bold hover:underline">Google AI Studio</a> and sign in.</li>
-                        <li>Click <strong>Create API key</strong>.</li>
-                        <li>Select <strong>Create API key in new project</strong>.</li>
-                        <li>Copy the generated key <br><span class="italic text-gray-600">(Note: Keys typically start with <strong>AIza</strong> or <strong>AQA</strong>)</span>.</li>
+                        <li>Go to <a href="https://console.groq.com/keys" target="_blank" class="text-blue-600 font-bold hover:underline">Groq Console</a> and sign in.</li>
+                        <li>Click <strong>Create API Key</strong>.</li>
+                        <li>Copy the generated key <br><span class="italic text-gray-600">(Note: Groq keys always start with <strong>gsk_</strong>)</span>.</li>
                     </ol>
                 </div>
 
-                <input type="password" id="apiKey" placeholder="Paste your Gemini API Key" class="w-full border p-2 rounded bg-gray-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-mono">
+                <input type="password" id="apiKey" placeholder="Paste your Groq API Key (gsk_...)" class="w-full border p-2 rounded bg-gray-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-mono">
                 <p class="text-xs text-gray-500 mt-2">Saved automatically and securely to your browser.</p>
             </div>
 
@@ -142,8 +141,8 @@ document.getElementById('dates').value = new Date().toLocaleDateString() + " - "
 // 1. PERSISTENCE LOGIC (API & FILES)
 // ==========================================
 const apiKeyInput = document.getElementById('apiKey');
-apiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
-apiKeyInput.addEventListener('change', (e) => localStorage.setItem('geminiApiKey', e.target.value.trim()));
+apiKeyInput.value = localStorage.getItem('groqApiKey') || '';
+apiKeyInput.addEventListener('change', (e) => localStorage.setItem('groqApiKey', e.target.value.trim()));
 
 // Generate Textbook Slots
 const bookList = document.getElementById('bookList');
@@ -218,11 +217,15 @@ function setStatus(msg, seconds = 0, isError = false) {
     }
 }
 
-// NEW FUNCTION: Test API Key before doing any heavy work
+// GROQ: Test API Key before doing any heavy work
 async function validateApiKey(apiKey) {
     try {
-        // We do a lightweight GET request to check model availability. Costs 0 tokens.
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash?key=${apiKey}`);
+        const response = await fetch(`https://api.groq.com/openai/v1/models`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`
+            }
+        });
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error?.message || "Invalid API Key or Network Issue.");
@@ -259,17 +262,18 @@ async function extractTextFromPDF(fileBlob, startPage, endPage) {
 }
 
 // ==========================================
-// 3. AI GENERATION (LESSON PLAN)
+// 3. AI GENERATION (LESSON PLAN - GROQ)
 // ==========================================
 document.getElementById('generateBtn').addEventListener('click', async () => {
+    // FORCE UPDATE
     const apiKey = document.getElementById('apiKey').value.trim();
-    localStorage.setItem('geminiApiKey', apiKey); 
+    localStorage.setItem('groqApiKey', apiKey); 
 
     const slot = document.getElementById('selectedBook').value;
     const fp = parseInt(document.getElementById('fromPage').value);
     const tp = parseInt(document.getElementById('toPage').value);
 
-    if (!apiKey) return alert("Please enter your Gemini API Key.");
+    if (!apiKey) return alert("Please enter your Groq API Key.");
     if (!slot || !fp || !tp) return alert("Please select a book and specify the page range.");
 
     const fileBlob = await localforage.getItem(`bookData_${slot}`);
@@ -278,14 +282,14 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     // TEST KEY BEFORE OCR
     setStatus("Validating API Key...", 1);
     const isKeyValid = await validateApiKey(apiKey);
-    if (!isKeyValid) return; // Stop execution entirely if key is broken
+    if (!isKeyValid) return;
 
-    // 1. Run OCR (Now safe to proceed)
+    // 1. Run OCR
     setStatus("Extracting text from PDF (this takes time)...", (tp - fp + 1) * 4);
     ocrTextCache = await extractTextFromPDF(fileBlob, fp, tp);
 
-    // 2. Call Gemini
-    setStatus("Structuring Lesson Plan via AI...", 5);
+    // 2. Call Groq
+    setStatus("Structuring Lesson Plan via AI (Groq LLaMA 3)...", 5);
     
     const authorName = document.getElementById('author').value.trim() || 'Subject Teacher';
     
@@ -301,12 +305,11 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     """${ocrTextCache.substring(0, 25000)}"""
     `;
 
-    const prompt = `You are an expert TNSB curriculum designer. Using the provided Source Material, create a highly detailed, accurate, and engaging lesson plan. DO NOT hallucinate. Do not makeup fake links. 
-    
+    const promptText = `Using the provided Source Material, create a highly detailed, accurate, and engaging lesson plan. DO NOT hallucinate. Do not makeup fake links. 
     Output strictly in Markdown format with these exact headings:
     # 1. Lesson Objectives & Learning Outcomes
     # 2. Introduction & Hook
-    # 3. Core Teaching Methodology (Based on source material)
+    # 3. Core Teaching Methodology
     # 4. Interactive Activities
     # 5. Real-World Applications
     # 6. Differentiated Instruction
@@ -318,11 +321,19 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     ${context}`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+        const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.2 }
+                model: "llama3-70b-8192", // Using Meta's massive 70B model for high quality reasoning
+                messages: [
+                    { role: "system", content: "You are an expert TNSB curriculum designer." },
+                    { role: "user", content: promptText }
+                ],
+                temperature: 0.2
             })
         });
 
@@ -332,7 +343,7 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         }
 
         const data = await response.json();
-        currentMarkdownPlan = data.candidates[0].content.parts[0].text;
+        currentMarkdownPlan = data.choices[0].message.content;
         
         // Add Header block to markdown
         const headerBlock = `**Institution:** ${document.getElementById('institution').value} | **Prepared By:** ${authorName} \n**Subject:** ${document.getElementById('subject').value} | **Class:** ${document.getElementById('cls').value} \n**Topic:** ${document.getElementById('topic').value} | **Dates:** ${document.getElementById('dates').value}\n\n---\n\n`;
@@ -377,10 +388,9 @@ async function downloadPDF() {
     pdf.save("AGMHSS_Lesson_Plan.pdf");
     setStatus();
 }
-
 async function generatePPT() {
     const apiKey = document.getElementById('apiKey').value.trim();
-    localStorage.setItem('geminiApiKey', apiKey);
+    localStorage.setItem('groqApiKey', apiKey);
 
     if (!ocrTextCache) return alert("Please generate the lesson plan first so text is extracted.");
     
@@ -388,14 +398,13 @@ async function generatePPT() {
     const isKeyValid = await validateApiKey(apiKey);
     if (!isKeyValid) return;
 
-    setStatus("Designing Student Presentation from textbook text...", 10);
+    setStatus("Designing Student Presentation (Groq LLaMA 3)...", 8);
 
     const topic = document.getElementById('topic').value;
     const cls = document.getElementById('cls').value;
     const authorName = document.getElementById('author').value.trim() || 'Subject Teacher';
 
-    const prompt = `You are an expert teacher creating a PowerPoint presentation for Class ${cls} students about "${topic}". 
-    Use the following textbook text to generate clear, educational, and engaging slides for the students to learn from. 
+    const promptText = `Use the following textbook text to generate clear, educational, and engaging slides for the students to learn from. 
     
     Output STRICTLY as a valid JSON array of objects. Do not include markdown formatting like \`\`\`json. Each object must represent a slide with:
     "title" (string: Slide Title)
@@ -406,11 +415,19 @@ async function generatePPT() {
     ${ocrTextCache.substring(0, 20000)}`;
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+        const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.1 } 
+                model: "llama3-70b-8192", 
+                messages: [
+                    { role: "system", content: `You are an expert teacher creating a JSON PowerPoint presentation for Class ${cls} students about "${topic}".` },
+                    { role: "user", content: promptText }
+                ],
+                temperature: 0.1 
             })
         });
 
@@ -420,8 +437,9 @@ async function generatePPT() {
         }
 
         const data = await response.json();
-        let rawJson = data.candidates[0].content.parts[0].text;
+        let rawJson = data.choices[0].message.content;
         
+        // Clean JSON formatting from Groq
         rawJson = rawJson.replace(/```json/g, "").replace(/```/g, "").trim();
         const slidesData = JSON.parse(rawJson);
 
