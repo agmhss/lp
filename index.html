@@ -44,8 +44,19 @@
             
             <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-indigo-500">
                 <h3 class="font-bold text-gray-800 mb-2">1. API Configuration</h3>
-                <input type="password" id="apiKey" placeholder="Gemini API Key" class="w-full border p-2 rounded bg-gray-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                <p class="text-xs text-gray-500 mt-2">Saved automatically to your browser.</p>
+                
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mb-4 text-xs text-indigo-900">
+                    <p class="font-bold mb-1 flex items-center gap-1">🔑 Need an API Key?</p>
+                    <ol class="list-decimal ml-4 space-y-1 mt-1 text-indigo-800">
+                        <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 font-bold hover:underline">Google AI Studio</a> and sign in.</li>
+                        <li>Click <strong>Create API key</strong>.</li>
+                        <li>Select <strong>Create API key in new project</strong>.</li>
+                        <li>Copy the generated key <br><span class="italic text-gray-600">(Note: The correct key will always start with <strong>AIza</strong>)</span>.</li>
+                    </ol>
+                </div>
+
+                <input type="password" id="apiKey" placeholder="Paste your Gemini API Key (AIza...)" class="w-full border p-2 rounded bg-gray-50 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-mono">
+                <p class="text-xs text-gray-500 mt-2">Saved automatically and securely to your browser.</p>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
@@ -180,15 +191,23 @@ async function handleFileUpload(event, slotIndex) {
 // 2. OCR & TEXT EXTRACTION
 // ==========================================
 let countdownInterval = null;
-function setStatus(msg, seconds = 0) {
+function setStatus(msg, seconds = 0, isError = false) {
     const sb = document.getElementById("statusBox");
     clearInterval(countdownInterval);
     if (!msg) { sb.classList.add("hidden"); return; }
     
     sb.classList.remove("hidden");
     sb.textContent = msg;
+    
+    if(isError) {
+        sb.classList.remove("bg-indigo-600");
+        sb.classList.add("bg-red-600");
+    } else {
+        sb.classList.remove("bg-red-600");
+        sb.classList.add("bg-indigo-600");
+    }
 
-    if (seconds > 0) {
+    if (seconds > 0 && !isError) {
         let remaining = seconds;
         sb.textContent = `${msg} (approx. ${remaining}s remaining)`;
         countdownInterval = setInterval(() => {
@@ -227,7 +246,10 @@ async function extractTextFromPDF(fileBlob, startPage, endPage) {
 // 3. AI GENERATION (LESSON PLAN)
 // ==========================================
 document.getElementById('generateBtn').addEventListener('click', async () => {
-    const apiKey = localStorage.getItem('geminiApiKey');
+    // FORCE UPDATE: Grab the key directly from the input right now
+    const apiKey = document.getElementById('apiKey').value.trim();
+    localStorage.setItem('geminiApiKey', apiKey); // Save it for next time
+
     const slot = document.getElementById('selectedBook').value;
     const fp = parseInt(document.getElementById('fromPage').value);
     const tp = parseInt(document.getElementById('toPage').value);
@@ -245,7 +267,6 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
     // 2. Call Gemini
     setStatus("Structuring Lesson Plan via AI...", 5);
     
-    // Fallback changed to 'Subject Teacher'
     const authorName = document.getElementById('author').value.trim() || 'Subject Teacher';
     
     const context = `
@@ -285,6 +306,11 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || "Invalid API Key or Network Issue.");
+        }
+
         const data = await response.json();
         currentMarkdownPlan = data.candidates[0].content.parts[0].text;
         
@@ -294,10 +320,10 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         document.getElementById('content').innerHTML = marked.parse(headerBlock + currentMarkdownPlan);
         document.getElementById('resultArea').classList.remove('hidden');
         document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
-        setStatus();
+        setStatus(); // clear status
     } catch (err) {
         console.error(err);
-        setStatus("Error generating plan. Check API Key and console.");
+        setStatus(`API Error: ${err.message}`, 0, true);
     }
 });
 
@@ -331,20 +357,19 @@ async function downloadPDF() {
     pdf.save("AGMHSS_Lesson_Plan.pdf");
     setStatus();
 }
-
 async function generatePPT() {
-    const apiKey = localStorage.getItem('geminiApiKey');
+    // FORCE UPDATE here as well
+    const apiKey = document.getElementById('apiKey').value.trim();
+    localStorage.setItem('geminiApiKey', apiKey);
+
     if (!ocrTextCache) return alert("Please generate the lesson plan first so text is extracted.");
     
     setStatus("Designing Student Presentation from textbook text...", 10);
 
     const topic = document.getElementById('topic').value;
     const cls = document.getElementById('cls').value;
-    
-    // Fallback changed to 'Subject Teacher'
     const authorName = document.getElementById('author').value.trim() || 'Subject Teacher';
 
-    // We ask Gemini to teach the students directly using the OCR text
     const prompt = `You are an expert teacher creating a PowerPoint presentation for Class ${cls} students about "${topic}". 
     Use the following textbook text to generate clear, educational, and engaging slides for the students to learn from. 
     
@@ -365,10 +390,14 @@ async function generatePPT() {
             })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || "Invalid API Key or Network Issue.");
+        }
+
         const data = await response.json();
         let rawJson = data.candidates[0].content.parts[0].text;
         
-        // Clean JSON formatting
         rawJson = rawJson.replace(/```json/g, "").replace(/```/g, "").trim();
         const slidesData = JSON.parse(rawJson);
 
@@ -378,14 +407,11 @@ async function generatePPT() {
         slidesData.forEach((slide, index) => {
             let pptSlide = pres.addSlide();
             
-            // Title slide styling
             if (index === 0) {
                 pptSlide.addText(slide.title, { x: 1, y: 2, w: '80%', h: 1, fontSize: 44, bold: true, color: '363636', align: 'center' });
                 pptSlide.addText(`Class: ${cls} | Prepared by: ${authorName}`, { x: 1, y: 3.5, w: '80%', fontSize: 24, color: '666666', align: 'center' });
             } else {
-                // Content slide styling
                 pptSlide.addText(slide.title, { x: 0.5, y: 0.5, w: '90%', h: 1, fontSize: 32, bold: true, color: '4338ca', border: [0, 0, {pt: 2, color: 'e0e7ff'}, 0] });
-                
                 let bulletItems = slide.content.map(text => ({ text: text, options: { bullet: true, margin: 10 } }));
                 pptSlide.addText(bulletItems, { x: 0.5, y: 1.8, w: '90%', h: 4.5, fontSize: 24, color: '374151', valign: 'top' });
             }
@@ -397,10 +423,9 @@ async function generatePPT() {
 
     } catch (err) {
         console.error(err);
-        setStatus("Error creating student PPT. Check console for JSON format errors.");
+        setStatus(`API Error: ${err.message}`, 0, true);
     }
 }
 </script>
 </body>
 </html>
-
